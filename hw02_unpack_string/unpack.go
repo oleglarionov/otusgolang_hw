@@ -7,103 +7,63 @@ import (
 	"unicode"
 )
 
+const (
+	beginState = iota
+	letterState
+	escapeState
+)
+
 var ErrInvalidString = errors.New("invalid string")
 
 func Unpack(input string) (string, error) {
 	builder := &strings.Builder{}
 
-	var prevSymbol rune
-	var curSymbol rune
-	var curState state = beginState
-	for _, nextSymbol := range input {
-		nextState, err := curState(prevSymbol, curSymbol, nextSymbol, builder, false)
-		if err != nil {
-			return "", err
-		}
+	state := beginState
+	var prevSymbol, curSymbol rune
+	for _, curSymbol = range input {
+		switch state {
+		case beginState:
+			if unicode.IsDigit(curSymbol) {
+				return "", ErrInvalidString
+			}
+			if curSymbol == '\\' {
+				state = escapeState
+				break
+			}
 
-		prevSymbol = curSymbol
-		curSymbol = nextSymbol
-		curState = nextState
+			prevSymbol = curSymbol
+			state = letterState
+
+		case letterState:
+			if unicode.IsDigit(curSymbol) {
+				n, _ := strconv.Atoi(string(curSymbol))
+				value := strings.Repeat(string(prevSymbol), n)
+				builder.WriteString(value)
+				state = beginState
+				break
+			}
+
+			builder.WriteRune(prevSymbol)
+			if curSymbol == '\\' {
+				state = escapeState
+			}
+			prevSymbol = curSymbol
+
+		case escapeState:
+			if curSymbol == '\\' || unicode.IsDigit(curSymbol) {
+				prevSymbol = curSymbol
+				state = letterState
+				break
+			}
+			return "", ErrInvalidString
+		}
 	}
-	_, err := curState(prevSymbol, curSymbol, '0', builder, true)
-	if err != nil {
-		return "", err
+	if state == escapeState {
+		return "", ErrInvalidString
+	}
+	if state == letterState {
+		builder.WriteRune(curSymbol)
 	}
 
 	return builder.String(), nil
-}
-
-type state func(prevSymbol, curSymbol, nextSymbol rune, builder *strings.Builder, isFinal bool) (state, error)
-
-func letterState(_, curSymbol, nextSymbol rune, builder *strings.Builder, isFinal bool) (state, error) {
-	if isFinal {
-		builder.WriteRune(curSymbol)
-		return nil, nil
-	}
-
-	if unicode.IsDigit(nextSymbol) {
-		return digitState, nil
-	}
-
-	builder.WriteRune(curSymbol)
-
-	if nextSymbol == '\\' {
-		return backslashState, nil
-	}
-
-	return letterState, nil
-}
-
-func digitState(prevSymbol, curSymbol, nextSymbol rune, builder *strings.Builder, isFinal bool) (state, error) {
-	n, _ := strconv.Atoi(string(curSymbol))
-	value := strings.Repeat(string(prevSymbol), n)
-
-	if isFinal {
-		builder.WriteString(value)
-		return nil, nil
-	}
-
-	if unicode.IsDigit(nextSymbol) {
-		return nil, ErrInvalidString
-	}
-
-	builder.WriteString(value)
-
-	if nextSymbol == '\\' {
-		return backslashState, nil
-	}
-
-	return letterState, nil
-}
-
-func backslashState(_, _, nextSymbol rune, _ *strings.Builder, isFinal bool) (state, error) {
-	if isFinal {
-		return nil, ErrInvalidString
-	}
-
-	if unicode.IsDigit(nextSymbol) {
-		return letterState, nil
-	}
-
-	if nextSymbol == '\\' {
-		return letterState, nil
-	}
-
-	return nil, ErrInvalidString
-}
-
-func beginState(_, _, nextSymbol rune, _ *strings.Builder, isFinal bool) (state, error) {
-	if isFinal {
-		return nil, nil
-	}
-
-	if unicode.IsDigit(nextSymbol) {
-		return nil, ErrInvalidString
-	}
-
-	if nextSymbol == '\\' {
-		return backslashState, nil
-	}
-
-	return letterState, nil
 }
