@@ -48,4 +48,28 @@ func TestList(t *testing.T) {
 		}
 		require.Equal(t, []int{70, 80, 60, 40, 10, 30, 50}, elems)
 	})
+
+	t.Run("corner cases", func(t *testing.T) {
+		l := NewList()
+		l.PushBack(1)
+		l.Remove(l.Back())
+		require.Equal(t, 0, l.Len())
+
+		l.PushFront(1)
+		l.Remove(l.Front())
+		require.Equal(t, 0, l.Len())
+
+		l.PushFront(1)
+		l.MoveToFront(l.Front())
+		require.Equal(t, 1, l.Front().Value)
+
+		l.MoveToFront(l.Back())
+		require.Equal(t, 1, l.Front().Value)
+
+		l.PushFront(0)
+		i1 := l.Back()
+		l.MoveToFront(i1)
+		require.Equal(t, 1, l.Front().Value)
+		require.Equal(t, 0, l.Back().Value)
+	})
 }
