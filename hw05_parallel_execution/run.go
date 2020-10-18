@@ -3,6 +3,7 @@ package hw05_parallel_execution //nolint:golint,stylecheck
 import (
 	"errors"
 	"sync"
+	"sync/atomic"
 )
 
 var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
@@ -14,61 +15,50 @@ func Run(tasks []Task, n int, m int) error {
 	if n <= 0 {
 		n = 1
 	}
-
-	errorsChBufferSize := m
-	if errorsChBufferSize <= 0 {
-		errorsChBufferSize = len(tasks)
+	if m <= 0 {
+		m = 0
 	}
-	errorsCh := make(chan error, errorsChBufferSize)
-	errorsCounter := 0
 
-	successCh := make(chan struct{}, n)
+	mCasted := int32(m)
+	taskCh := make(chan Task)
+	quitCh := make(chan struct{})
+	var errorsCounter int32 = 0
 
-	goroutinesCounter := 0
 	wg := sync.WaitGroup{}
-	i := 0
-	tasksLen := len(tasks)
-	completedTasks := 0
-	var resultErr error
-	for {
-		if goroutinesCounter == n || i == tasksLen {
+	worker := func(taskCh <-chan Task, quitCh <-chan struct{}) {
+		defer wg.Done()
+		for {
 			select {
-			case <-errorsCh:
-				errorsCounter++
-				completedTasks++
-				if errorsCounter == m {
-					resultErr = ErrErrorsLimitExceeded
-				}
-				goroutinesCounter--
-			case <-successCh:
-				completedTasks++
-				goroutinesCounter--
-			}
-
-			if resultErr != nil || completedTasks == tasksLen {
-				break
-			}
-		}
-
-		if i < tasksLen {
-			goroutinesCounter++
-
-			wg.Add(1)
-			go func(task Task, errorsCh chan<- error, successCh chan<- struct{}) {
-				defer wg.Done()
-
+			case <-quitCh:
+				return
+			case task := <-taskCh:
 				err := task()
 				if err != nil {
-					errorsCh <- err
-				} else {
-					successCh <- struct{}{}
+					atomic.AddInt32(&errorsCounter, 1)
 				}
-			}(tasks[i], errorsCh, successCh)
-
-			i++
+			}
 		}
 	}
-	wg.Wait()
 
-	return resultErr
+	wg.Add(n)
+	for i := 0; i < n; i++ {
+		go worker(taskCh, quitCh)
+	}
+
+	for _, task := range tasks {
+		if mCasted != 0 && atomic.LoadInt32(&errorsCounter) >= mCasted {
+			break
+		}
+		taskCh <- task
+	}
+	close(quitCh)
+
+	wg.Wait()
+	close(taskCh)
+
+	if mCasted != 0 && errorsCounter >= mCasted {
+		return ErrErrorsLimitExceeded
+	}
+
+	return nil
 }
