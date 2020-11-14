@@ -46,11 +46,11 @@ func readValue(dir string, fileName string) (string, error) {
 
 	r := bufio.NewReader(f)
 	s, err := r.ReadString('\n')
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return "", errors.WithStack(err)
 	}
 
-	s = strings.Replace(s, "\u0000", "\n", -1)
+	s = strings.ReplaceAll(s, "\u0000", "\n")
 	s = strings.TrimRightFunc(s, unicode.IsSpace)
 
 	return s, nil
