@@ -2,32 +2,29 @@ package main
 
 import (
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"os"
 	"testing"
 )
 
-func TestRunCmd(t *testing.T) {
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
-	_ = RunCmd([]string{"./testdata/echo.sh", "qwe", "123"}, Environment{
-		"HELLO": "HELLO1",
-		"BAR":   "BAR1",
-		"FOO":   "FOO1",
-		"UNSET": "UNSET1",
+func TestBuildCmd(t *testing.T) {
+	c := buildCmd([]string{"./testdata/echo.sh", "qwe", "123"}, []string{
+		"HELLO=HELLO1",
+		"BAR=BAR1",
+		"FOO=FOO1",
+		"UNSET=",
 	})
 
-	_ = w.Close()
-	out, _ := ioutil.ReadAll(r)
+	require.Equal(t, "./testdata/echo.sh", c.Path)
+	require.Equal(t, []string{"./testdata/echo.sh", "qwe", "123"}, c.Args)
+	require.Subset(t, c.Env, []string{"HELLO=HELLO1", "BAR=BAR1", "FOO=FOO1", "UNSET="})
+}
 
-	require.Equal(
-		t,
-		"HELLO is (HELLO1)\n"+
-			"BAR is (BAR1)\n"+
-			"FOO is (FOO1)\n"+
-			"UNSET is (UNSET1)\n"+
-			"arguments are qwe 123\n",
-		string(out),
-	)
+func TestRunCmd(t *testing.T) {
+	code := RunCmd([]string{"./testdata/echo.sh", "qwe", "123"}, []string{
+		"HELLO=HELLO1",
+		"BAR=BAR1",
+		"FOO=FOO1",
+		"UNSET=",
+	})
+
+	require.Equal(t, 0, code)
 }

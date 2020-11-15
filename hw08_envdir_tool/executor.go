@@ -1,14 +1,24 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
 )
 
 // RunCmd runs a command + arguments (cmd) with environment variables from env.
-func RunCmd(cmd []string, env Environment) (returnCode int) {
+func RunCmd(cmd, env []string) (returnCode int) {
+	c := buildCmd(cmd, env)
+
+	err := c.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return c.ProcessState.ExitCode()
+}
+
+func buildCmd(cmd, env []string) *exec.Cmd {
 	if len(cmd) == 0 {
 		log.Fatal("invalid cmd")
 	}
@@ -19,19 +29,7 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 
 	c.Stdin = os.Stdin
 	c.Stdout = os.Stdout
+	c.Env = env
 
-	if env != nil {
-		cEnv := os.Environ()
-		for key, value := range env {
-			cEnv = append(cEnv, fmt.Sprintf("%s=%s", key, value))
-		}
-		c.Env = cEnv
-	}
-
-	err := c.Run()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return c.ProcessState.ExitCode()
+	return c
 }

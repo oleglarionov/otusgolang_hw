@@ -6,7 +6,8 @@ import (
 )
 
 func TestReadDir(t *testing.T) {
-	env, _ := ReadDir("testdata/env")
+	env, err := ReadDir("testdata/env")
+	require.NoError(t, err)
 	require.Equal(t, "bar", env["BAR"])
 	require.Equal(t, "   foo\nwith new line", env["FOO"])
 	require.Equal(t, `"hello"`, env["HELLO"])

@@ -2,11 +2,11 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"unicode"
 
 	"github.com/pkg/errors"
@@ -19,16 +19,16 @@ type Environment map[string]string
 func ReadDir(dir string) (Environment, error) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "env dir reading error")
 	}
 
-	env := Environment{}
+	env := make(Environment, len(files))
 	for _, f := range files {
 		fileName := f.Name()
 
 		value, err := readValue(dir, fileName)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, err
 		}
 
 		env[fileName] = value
@@ -40,18 +40,18 @@ func ReadDir(dir string) (Environment, error) {
 func readValue(dir string, fileName string) (string, error) {
 	f, err := os.Open(filepath.Join(dir, fileName))
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", errors.Wrap(err, "file opening error")
 	}
 	defer f.Close()
 
 	r := bufio.NewReader(f)
-	s, err := r.ReadString('\n')
+	b, err := r.ReadBytes('\n')
 	if err != nil && !errors.Is(err, io.EOF) {
-		return "", errors.WithStack(err)
+		return "", errors.Wrap(err, "file reading error")
 	}
 
-	s = strings.ReplaceAll(s, "\u0000", "\n")
-	s = strings.TrimRightFunc(s, unicode.IsSpace)
+	b = bytes.ReplaceAll(b, []byte("\u0000"), []byte("\n"))
+	b = bytes.TrimRightFunc(b, unicode.IsSpace)
 
-	return s, nil
+	return string(b), nil
 }
