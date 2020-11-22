@@ -109,7 +109,7 @@ func (v *StructValidator) buildValidators(vType ValidatorType, validateTag strin
 
 		validator, ok := v.validators[vType][validatorTagName]
 		if !ok {
-			//log.Fatalf("unknown validator with tagName %s", validatorTagName)
+			// log.Fatalf("unknown validator with tagName %s", validatorTagName)
 			continue
 		}
 

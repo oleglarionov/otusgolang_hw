@@ -33,7 +33,7 @@ func (v *ValidationErrors) fillErrorsMap(keyStack []string, errsMap map[string]s
 	for _, vErr := range *v {
 		keyStack = append(keyStack, vErr.Key)
 
-		nestedV, ok := vErr.Err.(ValidationErrors)
+		nestedV, ok := vErr.Err.(ValidationErrors) //nolint:errorlint
 		if ok {
 			nestedV.fillErrorsMap(keyStack, errsMap)
 		} else {
