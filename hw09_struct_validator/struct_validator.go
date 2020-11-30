@@ -1,10 +1,12 @@
 package hw09_struct_validator //nolint:golint,stylecheck
 
 import (
-	"log"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 type ValidatorType int
@@ -12,6 +14,7 @@ type ValidatorType int
 const (
 	StringValidator ValidatorType = iota
 	IntValidator
+	ValidationTag = "validate"
 )
 
 type StructValidator struct {
@@ -21,11 +24,11 @@ type StructValidator struct {
 type Validator interface {
 	Type() ValidatorType
 	TagName() string
-	Build(constraint string)
+	Build(constraint string) error
 	Validate(value interface{}) error
 }
 
-func MakeStructValidator(validators []Validator) *StructValidator {
+func MakeStructValidator(validators []Validator) (*StructValidator, error) {
 	vMap := make(map[ValidatorType]map[string]Validator)
 	for _, v := range validators {
 		vType := v.Type()
@@ -39,20 +42,24 @@ func MakeStructValidator(validators []Validator) *StructValidator {
 
 		_, ok = vByType[vTagName]
 		if ok {
-			log.Fatalf("Validator with TagName %s duplicated", vTagName)
+			return nil, fmt.Errorf("validator with TagName %s duplicated", vTagName)
 		}
 
 		vByType[vTagName] = v
 	}
 
-	return &StructValidator{validators: vMap}
+	return &StructValidator{validators: vMap}, nil
 }
 
-func (v *StructValidator) Validate(value interface{}) ValidationErrors {
+func (v *StructValidator) Validate(value interface{}) (ValidationErrors, error) {
 	rv := reflect.ValueOf(value)
 	t := rv.Type()
 
-	errs := make(ValidationErrors, 0)
+	if t.Kind() != reflect.Struct {
+		return nil, errors.New("input value must be a structure")
+	}
+
+	validationErrs := ValidationErrors{}
 	for i := 0; i < rv.NumField(); i++ {
 		vf := rv.Field(i)
 		if !vf.CanInterface() {
@@ -60,7 +67,7 @@ func (v *StructValidator) Validate(value interface{}) ValidationErrors {
 		}
 
 		tf := t.Field(i)
-		validateTag, ok := tf.Tag.Lookup("validate")
+		validateTag, ok := tf.Tag.Lookup(ValidationTag)
 		if !ok {
 			continue
 		}
@@ -68,40 +75,49 @@ func (v *StructValidator) Validate(value interface{}) ValidationErrors {
 		var validators []Validator
 
 		elKind := getElKind(tf.Type)
+
+		var err error
 		switch elKind { //nolint:exhaustive
 		case reflect.Int:
-			validators = v.buildValidators(IntValidator, validateTag)
+			validators, err = v.buildValidators(IntValidator, validateTag)
 		case reflect.String:
-			validators = v.buildValidators(StringValidator, validateTag)
+			validators, err = v.buildValidators(StringValidator, validateTag)
 		default:
-			log.Fatal("unexpected type")
+			return nil, errors.New("unexpected type: " + elKind.String())
 		}
 
-		fieldErrs := validateFieldWithValidators(validators, vf)
+		if err != nil {
+			return nil, err
+		}
+
+		fieldErrs, err := validateFieldWithValidators(validators, vf)
+		if err != nil {
+			return nil, err
+		}
 
 		if len(fieldErrs) > 0 {
-			errs = append(errs, ValidationError{
+			validationErrs = append(validationErrs, ValidationError{
 				Key: tf.Name,
 				Err: fieldErrs,
 			})
 		}
 	}
 
-	if len(errs) == 0 {
-		return nil
+	if len(validationErrs) == 0 {
+		return nil, nil
 	}
 
-	return errs
+	return validationErrs, nil
 }
 
-func (v *StructValidator) buildValidators(vType ValidatorType, validateTag string) []Validator {
+func (v *StructValidator) buildValidators(vType ValidatorType, validateTag string) ([]Validator, error) {
 	validatorPairs := strings.Split(validateTag, "|")
 	fieldValidators := make([]Validator, 0, len(validatorPairs))
 
 	for _, validatorPair := range validatorPairs {
 		validatorParts := strings.SplitN(validatorPair, ":", 2)
 		if len(validatorParts) != 2 {
-			log.Fatal("invalid validate tag")
+			return nil, errors.New("invalid validate tag: " + validatorPair)
 		}
 
 		validatorTagName := validatorParts[0]
@@ -109,16 +125,18 @@ func (v *StructValidator) buildValidators(vType ValidatorType, validateTag strin
 
 		validator, ok := v.validators[vType][validatorTagName]
 		if !ok {
-			// log.Fatalf("unknown validator with tagName %s", validatorTagName)
-			continue
+			return nil, errors.New("unknown validator with tagName: " + validatorTagName)
 		}
 
-		validator.Build(constraint)
+		err := validator.Build(constraint)
+		if err != nil {
+			return nil, errors.Wrap(err, "build validator error")
+		}
 
 		fieldValidators = append(fieldValidators, validator)
 	}
 
-	return fieldValidators
+	return fieldValidators, nil
 }
 
 func getElKind(t reflect.Type) reflect.Kind {
@@ -131,17 +149,22 @@ func getElKind(t reflect.Type) reflect.Kind {
 	}
 }
 
-func validateFieldWithValidators(validators []Validator, value reflect.Value) ValidationErrors {
-	fieldErrs := make(ValidationErrors, 0)
+func validateFieldWithValidators(validators []Validator, value reflect.Value) (ValidationErrors, error) {
+	var fieldErrs ValidationErrors
 
-	switch value.Kind() { //nolint:exhaustive
+	kind := value.Kind()
+	switch kind { //nolint:exhaustive
 	case reflect.Int:
 		fieldErrs = validate(validators, value.Int())
 	case reflect.String:
 		fieldErrs = validate(validators, value.String())
 	case reflect.Slice:
 		for i := 0; i < value.Len(); i++ {
-			elErrors := validateFieldWithValidators(validators, value.Index(i))
+			elErrors, err := validateFieldWithValidators(validators, value.Index(i))
+			if err != nil {
+				return nil, err
+			}
+
 			if len(elErrors) > 0 {
 				fieldErrs = append(fieldErrs, ValidationError{
 					Key: strconv.Itoa(i),
@@ -150,10 +173,10 @@ func validateFieldWithValidators(validators []Validator, value reflect.Value) Va
 			}
 		}
 	default:
-		log.Fatal("unexpected type")
+		return nil, errors.New("unexpected type: " + kind.String())
 	}
 
-	return fieldErrs
+	return fieldErrs, nil
 }
 
 func validate(validators []Validator, value interface{}) ValidationErrors {

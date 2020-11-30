@@ -2,6 +2,8 @@ package hw09_struct_validator //nolint:golint,stylecheck
 import (
 	"encoding/json"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 type ValidationError struct {
@@ -10,27 +12,30 @@ type ValidationError struct {
 }
 
 func (v ValidationError) MarshalJSON() ([]byte, error) {
-	marshal, _ := json.Marshal(map[string]string{
+	marshal, err := json.Marshal(map[string]string{
 		"Key": v.Key,
 		"Err": v.Err.Error(),
 	})
-	return marshal, nil
+	return marshal, errors.Wrap(err, "marshaling error")
 }
 
 type ValidationErrors []ValidationError
 
 func (v ValidationErrors) Error() string {
-	keyStack := make([]string, 0)
+	var keyStack []string
 	errsMap := make(map[string]string)
 	v.fillErrorsMap(keyStack, errsMap)
 
-	marshal, _ := json.Marshal(errsMap)
+	marshal, err := json.Marshal(errsMap)
+	if err != nil {
+		panic(err)
+	}
 
 	return string(marshal)
 }
 
-func (v *ValidationErrors) fillErrorsMap(keyStack []string, errsMap map[string]string) {
-	for _, vErr := range *v {
+func (v ValidationErrors) fillErrorsMap(keyStack []string, errsMap map[string]string) {
+	for _, vErr := range v {
 		keyStack = append(keyStack, vErr.Key)
 
 		nestedV, ok := vErr.Err.(ValidationErrors) //nolint:errorlint
@@ -45,8 +50,11 @@ func (v *ValidationErrors) fillErrorsMap(keyStack []string, errsMap map[string]s
 	}
 }
 
-func Validate(v interface{}) error {
-	validator := MakeStructValidator([]Validator{
+var validator *StructValidator
+
+func init() {
+	var err error
+	validator, err = MakeStructValidator([]Validator{
 		&LengthValidator{},
 		&RegexpValidator{},
 		&InStringValidator{},
@@ -55,5 +63,16 @@ func Validate(v interface{}) error {
 		&InIntValidator{},
 	})
 
-	return validator.Validate(v)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func Validate(v interface{}) (ValidationErrors, error) {
+	validationErrors, err := validator.Validate(v)
+	if err != nil {
+		return nil, err
+	}
+
+	return validationErrors, nil
 }

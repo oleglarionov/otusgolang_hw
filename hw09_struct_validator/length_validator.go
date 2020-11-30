@@ -3,23 +3,29 @@ package hw09_struct_validator //nolint:golint,stylecheck
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 type LengthValidator struct {
 	lenValue int
 }
 
-func (v *LengthValidator) Build(constraint string) {
+func (v *LengthValidator) Build(constraint string) error {
 	value, err := strconv.Atoi(constraint)
 	if err != nil {
-		panic(err)
+		return errors.Wrap(err, "conversion to int error")
 	}
 
 	v.lenValue = value
+	return nil
 }
 
 func (v *LengthValidator) Validate(value interface{}) error {
-	casted := value.(string)
+	casted, ok := value.(string)
+	if !ok {
+		panic(fmt.Sprintf("can not cast %v to string", value))
+	}
 
 	actualLen := len(casted)
 	if actualLen != v.lenValue {

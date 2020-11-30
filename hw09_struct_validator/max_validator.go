@@ -3,6 +3,8 @@ package hw09_struct_validator //nolint:golint,stylecheck,dupl
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 type MaxValidator struct {
@@ -17,17 +19,22 @@ func (v *MaxValidator) TagName() string {
 	return "max"
 }
 
-func (v *MaxValidator) Build(constraint string) {
+func (v *MaxValidator) Build(constraint string) error {
 	maxValue, err := strconv.Atoi(constraint)
 	if err != nil {
-		panic(err)
+		return errors.Wrap(err, "conversion to int error")
 	}
 
 	v.maxValue = int64(maxValue)
+	return nil
 }
 
 func (v *MaxValidator) Validate(value interface{}) error {
-	casted := value.(int64)
+	casted, ok := value.(int64)
+	if !ok {
+		panic(fmt.Sprintf("can not cast %v to int64", value))
+	}
+
 	if casted > v.maxValue {
 		return MaxValidatorError{
 			RequiredMax: v.maxValue,

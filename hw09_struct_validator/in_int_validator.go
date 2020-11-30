@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 type InIntValidator struct {
@@ -18,21 +20,26 @@ func (v *InIntValidator) TagName() string {
 	return "in"
 }
 
-func (v *InIntValidator) Build(constraint string) {
+func (v *InIntValidator) Build(constraint string) error {
 	strValues := strings.Split(constraint, ",")
 	v.values = make([]int64, 0, len(strValues))
 	for _, strValue := range strValues {
 		intValue, err := strconv.Atoi(strValue)
 		if err != nil {
-			panic(err)
+			return errors.Wrap(err, "conversion to int error")
 		}
 
 		v.values = append(v.values, int64(intValue))
 	}
+	return nil
 }
 
 func (v *InIntValidator) Validate(value interface{}) error {
-	casted := value.(int64)
+	casted, ok := value.(int64)
+	if !ok {
+		panic(fmt.Sprintf("can not cast %v to int64", value))
+	}
+
 	for _, value := range v.values {
 		if casted == value {
 			return nil

@@ -3,6 +3,8 @@ package hw09_struct_validator //nolint:golint,stylecheck
 import (
 	"fmt"
 	"regexp"
+
+	"github.com/pkg/errors"
 )
 
 type RegexpValidator struct {
@@ -17,25 +19,27 @@ func (v *RegexpValidator) TagName() string {
 	return "regexp"
 }
 
-func (v *RegexpValidator) Build(constraint string) {
+func (v *RegexpValidator) Build(constraint string) error {
 	r, err := regexp.Compile(constraint)
 	if err != nil {
-		panic(err)
+		return errors.Wrap(err, "regexp compile error")
 	}
+
 	v.r = r
+	return nil
 }
 
 func (v *RegexpValidator) Validate(value interface{}) error {
-	switch casted := value.(type) {
-	case string:
-		if !v.r.MatchString(casted) {
-			return RegexpValidatorError{
-				RequiredRegexp: v.r.String(),
-				ActualValue:    casted,
-			}
+	casted, ok := value.(string)
+	if !ok {
+		panic(fmt.Sprintf("can not cast %v to string", value))
+	}
+
+	if !v.r.MatchString(casted) {
+		return RegexpValidatorError{
+			RequiredRegexp: v.r.String(),
+			ActualValue:    casted,
 		}
-	default:
-		panic("invalid value type")
 	}
 
 	return nil

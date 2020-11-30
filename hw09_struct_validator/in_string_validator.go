@@ -17,12 +17,17 @@ func (v *InStringValidator) TagName() string {
 	return "in"
 }
 
-func (v *InStringValidator) Build(constraint string) {
+func (v *InStringValidator) Build(constraint string) error {
 	v.values = strings.Split(constraint, ",")
+	return nil
 }
 
 func (v *InStringValidator) Validate(value interface{}) error {
-	casted := value.(string)
+	casted, ok := value.(string)
+	if !ok {
+		panic(fmt.Sprintf("can not cast %v to string", value))
+	}
+
 	for _, value := range v.values {
 		if casted == value {
 			return nil

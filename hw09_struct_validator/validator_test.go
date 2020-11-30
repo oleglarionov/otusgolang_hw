@@ -234,8 +234,16 @@ func TestValidate(t *testing.T) {
 
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			err := Validate(tt.in)
-			require.Equal(t, tt.expectedErr, err)
+			validationErrors, err := Validate(tt.in)
+			require.NoError(t, err)
+			require.Equal(t, tt.expectedErr, validationErrors)
 		})
 	}
+}
+
+func TestValidateNegativeCases(t *testing.T) {
+	t.Run("invalid input type", func(t *testing.T) {
+		_, err := Validate(1)
+		require.EqualError(t, err, "input value must be a structure")
+	})
 }
