@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -44,7 +44,7 @@ func main() {
 
 	select {
 	case err := <-errCh:
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, err)
 	case <-ctx.Done():
 	}
 }
