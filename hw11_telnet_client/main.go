@@ -3,15 +3,12 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 var timeout time.Duration
@@ -24,31 +21,32 @@ func main() {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	go signalHandler(ctx, cancelFunc)
 
-	var tc TelnetClient
-	defer func() {
-		if tc != nil {
-			tc.Close()
-		}
-	}()
+	flag.Parse()
+	host := flag.Arg(0)
+	port := flag.Arg(1)
+	address := net.JoinHostPort(host, port)
 
+	tc := NewTelnetClient(address, timeout, os.Stdin, os.Stdout)
+
+	errCh := make(chan error, 1)
+	defer close(errCh)
+
+	defer tc.Close()
 	go func() {
-		flag.Parse()
-		host := flag.Arg(0)
-		port := flag.Arg(1)
-
-		address := net.JoinHostPort(host, port)
-		tc := NewTelnetClient(address, timeout, os.Stdin, os.Stdout)
-
 		if err := tc.Connect(); err != nil {
-			log.Fatal(err)
+			errCh <- err
+			return
 		}
-		fmt.Fprintf(os.Stderr, "...Connected to %s\n", address)
 
-		go receiver(tc, cancelFunc)
-		go sender(tc, cancelFunc)
+		go receiver(tc, cancelFunc, errCh)
+		go sender(tc, cancelFunc, errCh)
 	}()
 
-	<-ctx.Done()
+	select {
+	case err := <-errCh:
+		log.Fatal(err)
+	case <-ctx.Done():
+	}
 }
 
 func signalHandler(ctx context.Context, cancelFunc context.CancelFunc) {
@@ -61,26 +59,20 @@ func signalHandler(ctx context.Context, cancelFunc context.CancelFunc) {
 	}
 }
 
-func receiver(tc TelnetClient, cancelFunc context.CancelFunc) {
+func receiver(tc TelnetClient, cancelFunc context.CancelFunc, errCh chan<- error) {
 	if err := tc.Receive(); err != nil {
-		if errors.Is(err, ErrUseClosedConn) {
-			return
-		}
-
-		log.Fatal(err)
+		errCh <- err
+		return
 	}
-	fmt.Fprintln(os.Stderr, "...Connection was closed by peer")
+
 	cancelFunc()
 }
 
-func sender(tc TelnetClient, cancelFunc context.CancelFunc) {
+func sender(tc TelnetClient, cancelFunc context.CancelFunc, errCh chan<- error) {
 	if err := tc.Send(); err != nil {
-		if errors.Is(err, ErrUseClosedConn) {
-			return
-		}
-
-		log.Fatal(err)
+		errCh <- err
+		return
 	}
-	fmt.Fprintln(os.Stderr, "...EOF")
+
 	cancelFunc()
 }
