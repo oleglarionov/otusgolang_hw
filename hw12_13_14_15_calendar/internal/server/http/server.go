@@ -2,31 +2,38 @@ package internalhttp
 
 import (
 	"context"
+	"net"
+	"net/http"
+
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/logger"
 )
 
 type Server struct {
-	// TODO
+	httpServer *http.Server
+	logger     logger.Logger
 }
 
-type Application interface {
-	// TODO
+type ServerConfig struct {
+	Host string
+	Port string
 }
 
-func NewServer(app Application) *Server {
-	return &Server{}
-}
+func NewServer(port string, handler http.Handler, l logger.Logger) *Server {
+	httpServer := &http.Server{
+		Addr:    net.JoinHostPort("", port),
+		Handler: loggingMiddleware(handler, l),
+	}
 
-func (s *Server) Start(ctx context.Context) error {
-	// TODO
-	select {
-	case <-ctx.Done():
-		return nil
+	return &Server{
+		httpServer: httpServer,
+		logger:     l,
 	}
 }
 
-func (s *Server) Stop(ctx context.Context) error {
-	// TODO
-	return nil
+func (s *Server) Start() error {
+	return s.httpServer.ListenAndServe()
 }
 
-// TODO
+func (s *Server) Stop(ctx context.Context) error {
+	return s.httpServer.Shutdown(ctx)
+}

@@ -10,6 +10,13 @@ build:
 run: build
 	$(BIN) -config ./configs/config.toml
 
+migrate:
+	@if [ ! -f "./bin/goose" ]; then \
+		echo "installing goose..." && \
+		go build -o ./bin/goose github.com/pressly/goose/cmd/goose; \
+	fi
+	./bin/goose -dir=migrations postgres "$(DSN)" up
+
 build-img:
 	docker build \
 		--build-arg=LDFLAGS="$(LDFLAGS)" \
@@ -23,7 +30,7 @@ version: build
 	$(BIN) version
 
 test:
-	go test -race ./internal/... ./pkg/...
+	go test -race ./internal/...
 
 install-lint-deps:
 	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.30.0

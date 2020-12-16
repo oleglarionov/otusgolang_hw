@@ -1,0 +1,10 @@
+[logger]
+level = "INFO"
+file = "logs.txt"
+
+[server]
+port = "8080"
+
+[repository]
+type = "sql"
+credentials = "host=localhost port=54320 user=postgres password=qwerty dbname=postgres sslmode=disable"
