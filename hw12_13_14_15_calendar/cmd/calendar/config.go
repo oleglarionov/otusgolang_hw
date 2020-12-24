@@ -4,17 +4,21 @@ package main
 // Организация конфига в main принуждает нас сужать API компонентов, использовать
 // при их конструировании только необходимые параметры, а также уменьшает вероятность циклической зависимости.
 type Config struct {
-	Logger LoggerConf
-	// TODO
+	Logger     LoggerConf     `mapstructure:"logger"`
+	Server     ServerConf     `mapstructure:"server"`
+	Repository RepositoryConf `mapstructure:"repository"`
 }
 
 type LoggerConf struct {
-	Level string
-	// TODO
+	Level string `mapstructure:"level"`
+	File  string `mapstructure:"file"`
 }
 
-func NewConfig() Config {
-	return Config{}
+type ServerConf struct {
+	Port string `mapstructure:"port"`
 }
 
-// TODO
+type RepositoryConf struct {
+	Type        string `mapstructure:"type"`
+	Credentials string `mapstructure:"credentials"`
+}
