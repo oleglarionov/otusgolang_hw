@@ -2,25 +2,23 @@ package internalhttp
 
 import (
 	"context"
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 	"net"
 	"net/http"
-
-	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/logger"
 )
 
 type Server struct {
 	httpServer *http.Server
-	logger     logger.Logger
+	logger     common.Logger
 }
 
-type ServerConfig struct {
-	Host string
+type Config struct {
 	Port string
 }
 
-func NewServer(port string, handler http.Handler, l logger.Logger) *Server {
+func NewServer(cfg Config, handler http.Handler, l common.Logger) *Server {
 	httpServer := &http.Server{
-		Addr:    net.JoinHostPort("", port),
+		Addr:    net.JoinHostPort("", cfg.Port),
 		Handler: loggingMiddleware(handler, l),
 	}
 

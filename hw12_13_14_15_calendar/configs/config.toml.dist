@@ -6,5 +6,7 @@ file = "logs.txt"
 port = "8080"
 
 [repository]
-type = "sql"
-credentials = "host=localhost port=54320 user=postgres password=qwerty dbname=postgres sslmode=disable"
+type = "memory"  # memory or sql
+
+[db]
+dsn = "host=localhost port=54320 user=postgres password=qwerty dbname=postgres sslmode=disable"

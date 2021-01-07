@@ -7,6 +7,7 @@ type Config struct {
 	Logger     LoggerConf     `mapstructure:"logger"`
 	Server     ServerConf     `mapstructure:"server"`
 	Repository RepositoryConf `mapstructure:"repository"`
+	DB         DBConf         `mapstructure:"db"`
 }
 
 type LoggerConf struct {
@@ -19,6 +20,9 @@ type ServerConf struct {
 }
 
 type RepositoryConf struct {
-	Type        string `mapstructure:"type"`
-	Credentials string `mapstructure:"credentials"`
+	Type string `mapstructure:"type"`
+}
+
+type DBConf struct {
+	DSN string `mapstructure:"dsn"`
 }

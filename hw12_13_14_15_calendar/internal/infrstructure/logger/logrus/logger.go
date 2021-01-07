@@ -2,10 +2,10 @@ package logrusadapter
 
 import (
 	"fmt"
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 	"os"
 	"strings"
 
-	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,9 +18,9 @@ type Config struct {
 	File  string
 }
 
-var _ logger.Logger = (*Adapter)(nil)
+var _ common.Logger = (*Adapter)(nil)
 
-func New(cfg Config) (logger.Logger, error) {
+func New(cfg Config) (common.Logger, error) {
 	l := logrus.New()
 
 	file, err := os.OpenFile(cfg.File, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
