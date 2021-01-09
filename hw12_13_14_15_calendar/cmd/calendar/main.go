@@ -5,6 +5,8 @@ import (
 	"errors"
 	"flag"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
+	internalgrpc "github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/grpc"
+	"google.golang.org/grpc"
 	"net/http"
 
 	golog "log"
@@ -25,10 +27,11 @@ func init() {
 type CalendarApp struct {
 	logger     common.Logger
 	httpServer *internalhttp.Server
+	grpcServer *internalgrpc.Server
 }
 
-func NewApp(logger common.Logger, httpServer *internalhttp.Server) *CalendarApp {
-	return &CalendarApp{logger: logger, httpServer: httpServer}
+func NewApp(logger common.Logger, httpServer *internalhttp.Server, grpcServer *internalgrpc.Server) *CalendarApp {
+	return &CalendarApp{logger: logger, httpServer: httpServer, grpcServer: grpcServer}
 }
 
 func main() {
@@ -61,14 +64,27 @@ func main() {
 
 	// start
 	app.logger.Info("calendar is running...")
-	if err := app.httpServer.Start(); err != nil {
-		if errors.Is(err, http.ErrServerClosed) {
-			app.logger.Info("calendar stopped")
-		} else {
-			app.logger.Error("failed to start http server: " + err.Error())
-			cancel()
+
+	go func() {
+		if err := app.httpServer.Start(); err != nil {
+			if errors.Is(err, http.ErrServerClosed) {
+				app.logger.Info("http server stopped")
+			} else {
+				app.logger.Error("failed to start http server: " + err.Error())
+				cancel()
+			}
 		}
-	}
+	}()
+
+	go func() {
+		if err := app.grpcServer.Start(); err != nil {
+			if errors.Is(err, grpc.ErrServerStopped) {
+				app.logger.Info("grpc server stopped")
+			} else {
+				app.logger.Error("failed to start grpc server: " + err.Error())
+			}
+		}
+	}()
 
 	<-ctx.Done()
 }
@@ -89,6 +105,8 @@ func signalHandler(app *CalendarApp, ctx context.Context, cancel context.CancelF
 		if err := app.httpServer.Stop(serverCloseCtx); err != nil {
 			app.logger.Error("failed to stop http server: " + err.Error())
 		}
+
+		app.grpcServer.Stop()
 
 	case <-ctx.Done():
 	}

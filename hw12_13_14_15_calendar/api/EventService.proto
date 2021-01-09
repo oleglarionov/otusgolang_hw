@@ -1,7 +1,61 @@
 syntax = "proto3";
 
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
 package event;
 
+option go_package = ".;api";
+
+service EventService {
+  rpc Create(CreateEventRequest) returns (Event);
+  rpc Update(UpdateEventRequest) returns (Event);
+  rpc Delete(DeleteEventRequest) returns (google.protobuf.Empty);
+  rpc DayList(DayListRequest) returns (Events);
+  rpc WeekList(WeekListRequest) returns (Events);
+  rpc MonthList(MonthListRequest) returns (Events);
+}
+
+message CreateEventRequest {
+  string Id = 1;
+  string Title = 2;
+  string Description = 3;
+  google.protobuf.Timestamp BeginDate = 4;
+  google.protobuf.Timestamp EndDate = 5;
+}
+
+message UpdateEventRequest {
+  string Id = 1;
+  string Title = 2;
+  string Description = 3;
+  google.protobuf.Timestamp BeginDate = 4;
+  google.protobuf.Timestamp EndDate = 5;
+}
+
+message DeleteEventRequest {
+  string Id = 1;
+}
+
+message DayListRequest {
+  google.protobuf.Timestamp Day = 1;
+}
+
+message WeekListRequest {
+  google.protobuf.Timestamp BeginDate = 1;
+}
+
+message MonthListRequest {
+  google.protobuf.Timestamp BeginDate = 1;
+}
+
 message Event {
-    // TODO
+  string Id = 1;
+  string Title = 2;
+  string Description = 3;
+  google.protobuf.Timestamp BeginDate = 4;
+  google.protobuf.Timestamp EndDate = 5;
+}
+
+message Events {
+  repeated Event items = 1;
 }

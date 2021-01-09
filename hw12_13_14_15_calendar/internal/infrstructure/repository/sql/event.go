@@ -68,8 +68,12 @@ func (r *EventRepository) Delete(ctx context.Context, model event.Model) error {
 }
 
 func (r *EventRepository) GetByInterval(ctx context.Context, interval event.UserInterval, excluded ...event.ID) ([]event.Model, error) {
-	qb := sq.Select("*").
+	qb := sq.Select("events.*").
 		From("events").
+		InnerJoin("event_participants "+
+			"on events.id = event_participants.event_id "+
+			"and event_participants.uid = ?",
+			interval.Uid).
 		Where(
 			sq.Or{
 				sq.And{

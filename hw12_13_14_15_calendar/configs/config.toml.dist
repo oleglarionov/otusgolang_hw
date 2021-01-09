@@ -2,8 +2,11 @@
 level = "INFO"
 file = "logs.txt"
 
-[server]
+[http_server]
 port = "8080"
+
+[grpc_server]
+port = "9090"
 
 [repository]
 type = "memory"  # memory or sql

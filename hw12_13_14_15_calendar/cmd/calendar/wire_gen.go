@@ -9,12 +9,16 @@ import (
 	"fmt"
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/api"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/logger/logrus"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/repository/memory"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/repository/sql"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/uuid"
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/grpc"
+	handler2 "github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/grpc/handler"
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/grpc/middleware"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/http"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/http/handler"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/usecase"
@@ -47,7 +51,15 @@ func setup(cfg Config) (*CalendarApp, error) {
 	handlerHandler := handler.NewHandler(eventUseCaseInterface, logger)
 	httpHandler := httpHandlerProvider(handlerHandler)
 	server := httpServerProvider(cfg, httpHandler, logger)
-	calendarApp := NewApp(logger, server)
+	eventServiceServerImpl := handler2.NewEventServiceServerImpl(eventUseCaseInterface)
+	loggingMiddleware := middleware.NewLoggingMiddleware(logger)
+	authenticationMiddleware := middleware.NewAuthenticationMiddleware()
+	v := grpcMiddlewaresProvider(loggingMiddleware, authenticationMiddleware)
+	internalgrpcServer, err := grpcServerProvider(cfg, eventServiceServerImpl, v)
+	if err != nil {
+		return nil, err
+	}
+	calendarApp := NewApp(logger, server, internalgrpcServer)
 	return calendarApp, nil
 }
 
@@ -57,12 +69,26 @@ func loggerProvider(cfg Config) (common.Logger, error) {
 	return logrusadapter.New(logrusadapter.Config(cfg.Logger))
 }
 
-func httpServerProvider(cfg Config, handler2 http.Handler, l common.Logger) *internalhttp.Server {
-	return internalhttp.NewServer(internalhttp.Config(cfg.Server), handler2, l)
+func httpServerProvider(cfg Config, handler3 http.Handler, l common.Logger) *internalhttp.Server {
+	return internalhttp.NewServer(internalhttp.Config(cfg.HttpServer), handler3, l)
 }
 
 func httpHandlerProvider(h *handler.Handler) http.Handler {
 	return h.InitRoutes()
+}
+
+func grpcServerProvider(cfg Config, eventService api.EventServiceServer, middlewares []middleware.Middleware) (*internalgrpc.Server, error) {
+	return internalgrpc.NewServer(cfg.GrpcServer.Port, eventService, middlewares)
+}
+
+func grpcMiddlewaresProvider(
+	loggingMiddleware *middleware.LoggingMiddleware,
+	authenticationMiddleware *middleware.AuthenticationMiddleware,
+) []middleware.Middleware {
+	return []middleware.Middleware{
+		loggingMiddleware,
+		authenticationMiddleware,
+	}
 }
 
 func eventRepositoryProvider(

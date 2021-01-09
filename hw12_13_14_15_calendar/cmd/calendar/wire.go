@@ -7,12 +7,16 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/wire"
 	"github.com/jmoiron/sqlx"
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/api"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
 	logrusadapter "github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/logger/logrus"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/repository/memory"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/repository/sql"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/uuid"
+	internalgrpc "github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/grpc"
+	grpchandler "github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/grpc/handler"
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/grpc/middleware"
 	internalhttp "github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/http"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/http/handler"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/usecase"
@@ -27,6 +31,13 @@ func setup(cfg Config) (*CalendarApp, error) {
 		httpServerProvider,
 		httpHandlerProvider,
 		handler.NewHandler,
+
+		grpcServerProvider,
+		wire.Bind(new(api.EventServiceServer), new(*grpchandler.EventServiceServerImpl)),
+		grpchandler.NewEventServiceServerImpl,
+		grpcMiddlewaresProvider,
+		middleware.NewLoggingMiddleware,
+		middleware.NewAuthenticationMiddleware,
 
 		usecase.NewEventUseCase,
 		eventRepositoryProvider,
@@ -46,7 +57,7 @@ func loggerProvider(cfg Config) (common.Logger, error) {
 
 func httpServerProvider(cfg Config, handler http.Handler, l common.Logger) *internalhttp.Server {
 	return internalhttp.NewServer(
-		internalhttp.Config(cfg.Server),
+		internalhttp.Config(cfg.HttpServer),
 		handler,
 		l,
 	)
@@ -54,6 +65,20 @@ func httpServerProvider(cfg Config, handler http.Handler, l common.Logger) *inte
 
 func httpHandlerProvider(h *handler.Handler) http.Handler {
 	return h.InitRoutes()
+}
+
+func grpcServerProvider(cfg Config, eventService api.EventServiceServer, middlewares []middleware.Middleware) (*internalgrpc.Server, error) {
+	return internalgrpc.NewServer(cfg.GrpcServer.Port, eventService, middlewares)
+}
+
+func grpcMiddlewaresProvider(
+	loggingMiddleware *middleware.LoggingMiddleware,
+	authenticationMiddleware *middleware.AuthenticationMiddleware,
+) []middleware.Middleware {
+	return []middleware.Middleware{
+		loggingMiddleware,
+		authenticationMiddleware,
+	}
 }
 
 func eventRepositoryProvider(
