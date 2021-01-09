@@ -3,6 +3,7 @@ package sql
 import (
 	"context"
 	"fmt"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
@@ -22,7 +23,7 @@ func NewEventRepository(db *sqlx.DB, sbt sq.StatementBuilderType) event.Reposito
 func (r *EventRepository) Create(ctx context.Context, model event.Model) error {
 	_, err := r.sbt.Insert("events").
 		Columns("id", "title", "description", "begin_date", "end_date").
-		Values(model.Id, model.Title, model.Description, model.BeginDate, model.EndDate).
+		Values(model.ID, model.Title, model.Description, model.BeginDate, model.EndDate).
 		RunWith(r.db).
 		ExecContext(ctx)
 	if err != nil {
@@ -73,7 +74,7 @@ func (r *EventRepository) GetByInterval(ctx context.Context, interval event.User
 		InnerJoin("event_participants "+
 			"on events.id = event_participants.event_id "+
 			"and event_participants.uid = ?",
-			interval.Uid).
+			interval.UID).
 		Where(
 			sq.Or{
 				sq.And{

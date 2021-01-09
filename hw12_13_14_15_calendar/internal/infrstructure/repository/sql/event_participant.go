@@ -3,6 +3,7 @@ package sql
 import (
 	"context"
 	"fmt"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
@@ -26,7 +27,7 @@ func (r *EventParticipantRepository) Create(ctx context.Context, participants []
 	qb := r.sbt.Insert("event_participants").
 		Columns("event_id", "uid")
 	for _, p := range participants {
-		qb = qb.Values(p.EventId, p.Uid)
+		qb = qb.Values(p.EventID, p.UID)
 	}
 	qb = qb.Suffix("on conflict do nothing")
 
@@ -38,16 +39,17 @@ func (r *EventParticipantRepository) GetUserEventIds(ctx context.Context, uid us
 	panic("implement me")
 }
 
-func (r *EventParticipantRepository) GetParticipants(ctx context.Context, eventId event.ID) ([]user.UID, error) {
+func (r *EventParticipantRepository) GetParticipants(ctx context.Context, eventID event.ID) ([]user.UID, error) {
 	query, args := r.sbt.Select("uid").
 		From("event_participants").
-		Where(sq.Eq{"event_id": eventId}).
+		Where(sq.Eq{"event_id": eventID}).
 		MustSql()
 
 	rows, err := r.db.QueryxContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	result := make([]user.UID, 0)
 	for rows.Next() {
@@ -61,8 +63,8 @@ func (r *EventParticipantRepository) GetParticipants(ctx context.Context, eventI
 	return result, nil
 }
 
-func (r *EventParticipantRepository) DeleteAllForEvent(ctx context.Context, eventId event.ID) error {
-	_, err := r.db.ExecContext(ctx, "delete from event_participants where event_id = $1", &eventId)
+func (r *EventParticipantRepository) DeleteAllForEvent(ctx context.Context, eventID event.ID) error {
+	_, err := r.db.ExecContext(ctx, "delete from event_participants where event_id = $1", &eventID)
 	if err != nil {
 		return fmt.Errorf("error deleting event participants: %w", err)
 	}

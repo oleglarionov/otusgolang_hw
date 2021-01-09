@@ -57,7 +57,7 @@ func loggerProvider(cfg Config) (common.Logger, error) {
 
 func httpServerProvider(cfg Config, handler http.Handler, l common.Logger) *internalhttp.Server {
 	return internalhttp.NewServer(
-		internalhttp.Config(cfg.HttpServer),
+		internalhttp.Config(cfg.HTTPServer),
 		handler,
 		l,
 	)
@@ -115,5 +115,5 @@ func dbProvider(cfg Config) (*sqlx.DB, error) {
 		return nil, nil
 	}
 
-	return sql.NewDb(cfg.DB.DSN)
+	return sql.NewDB(cfg.DB.DSN)
 }

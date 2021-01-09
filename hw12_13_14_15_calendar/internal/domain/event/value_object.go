@@ -1,8 +1,9 @@
 package event
 
 import (
-	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
 	"time"
+
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
 )
 
 type Interval struct {
@@ -11,6 +12,6 @@ type Interval struct {
 }
 
 type UserInterval struct {
-	Uid user.UID
+	UID user.UID
 	Interval
 }

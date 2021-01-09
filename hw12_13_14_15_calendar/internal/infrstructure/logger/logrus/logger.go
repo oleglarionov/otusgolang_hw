@@ -2,10 +2,10 @@ package logrusadapter
 
 import (
 	"fmt"
-	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 	"os"
 	"strings"
 
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 	"github.com/sirupsen/logrus"
 )
 

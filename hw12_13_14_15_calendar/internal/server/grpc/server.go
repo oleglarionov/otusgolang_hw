@@ -1,10 +1,11 @@
 package internalgrpc
 
 import (
+	"net"
+
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/api"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/grpc/middleware"
 	"google.golang.org/grpc"
-	"net"
 )
 
 type Server struct {

@@ -2,10 +2,11 @@ package memory
 
 import (
 	"context"
+	"sync"
+
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
-	"sync"
 )
 
 type EventRepository struct {
@@ -27,12 +28,12 @@ func (r *EventRepository) Create(_ context.Context, model event.Model) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	_, ok := r.data[model.Id]
+	_, ok := r.data[model.ID]
 	if ok {
 		return domain.ErrAlreadyExists
 	}
 
-	r.data[model.Id] = model
+	r.data[model.ID] = model
 	return nil
 }
 
@@ -47,8 +48,8 @@ func (r *EventRepository) GetAllForUser(ctx context.Context, uid user.UID) ([]ev
 		return nil, err
 	}
 
-	for _, eventId := range eventIds {
-		result = append(result, r.data[eventId])
+	for _, eventID := range eventIds {
+		result = append(result, r.data[eventID])
 	}
 
 	return result, err
@@ -70,8 +71,8 @@ func (r *EventRepository) Update(_ context.Context, model event.Model) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if _, ok := r.data[model.Id]; ok {
-		r.data[model.Id] = model
+	if _, ok := r.data[model.ID]; ok {
+		r.data[model.ID] = model
 		return nil
 	}
 
@@ -82,8 +83,8 @@ func (r *EventRepository) Delete(_ context.Context, model event.Model) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if _, ok := r.data[model.Id]; ok {
-		delete(r.data, model.Id)
+	if _, ok := r.data[model.ID]; ok {
+		delete(r.data, model.ID)
 		return nil
 	}
 
@@ -92,8 +93,8 @@ func (r *EventRepository) Delete(_ context.Context, model event.Model) error {
 
 func (r *EventRepository) GetByInterval(ctx context.Context, interval event.UserInterval, excluded ...event.ID) ([]event.Model, error) {
 	excludedSet := make(map[event.ID]struct{}, len(excluded))
-	for _, excludedId := range excluded {
-		excludedSet[excludedId] = struct{}{}
+	for _, excludedID := range excluded {
+		excludedSet[excludedID] = struct{}{}
 	}
 
 	r.mu.RLock()
@@ -101,17 +102,17 @@ func (r *EventRepository) GetByInterval(ctx context.Context, interval event.User
 
 	result := make([]event.Model, 0)
 
-	eventIds, err := r.participantRepository.GetUserEventIds(ctx, interval.Uid)
+	eventIds, err := r.participantRepository.GetUserEventIds(ctx, interval.UID)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, eventId := range eventIds {
-		if _, ok := excludedSet[eventId]; ok {
+	for _, eventID := range eventIds {
+		if _, ok := excludedSet[eventID]; ok {
 			continue
 		}
 
-		e := r.data[eventId]
+		e := r.data[eventID]
 		if (e.BeginDate.After(interval.BeginDate) || e.BeginDate.Equal(interval.BeginDate)) &&
 			e.BeginDate.Before(interval.EndDate) {
 			result = append(result, e)

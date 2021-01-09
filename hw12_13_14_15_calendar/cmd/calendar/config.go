@@ -5,7 +5,7 @@ package main
 // при их конструировании только необходимые параметры, а также уменьшает вероятность циклической зависимости.
 type Config struct {
 	Logger     LoggerConf     `mapstructure:"logger"`
-	HttpServer HttpServerConf `mapstructure:"http_server"`
+	HTTPServer HTTPServerConf `mapstructure:"http_server"`
 	GrpcServer GrpcServerConf `mapstructure:"grpc_server"`
 	Repository RepositoryConf `mapstructure:"repository"`
 	DB         DBConf         `mapstructure:"db"`
@@ -16,7 +16,7 @@ type LoggerConf struct {
 	File  string `mapstructure:"file"`
 }
 
-type HttpServerConf struct {
+type HTTPServerConf struct {
 	Port string `mapstructure:"port"`
 }
 

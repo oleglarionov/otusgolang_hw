@@ -2,10 +2,11 @@ package usecase
 
 import (
 	"context"
+	"time"
+
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
-	"time"
 )
 
 type EventDto struct {
@@ -16,7 +17,7 @@ type EventDto struct {
 }
 
 type CreateEventDto struct {
-	Id string
+	ID string
 	EventDto
 }
 
@@ -68,19 +69,19 @@ func (u *eventUseCase) Create(ctx context.Context, uid user.UID, dto CreateEvent
 			BeginDate: dto.BeginDate,
 			EndDate:   dto.EndDate,
 		},
-		Uid: uid,
+		UID: uid,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	id := dto.Id
+	id := dto.ID
 	if id == "" {
 		id = u.uuidGenerator.Generate()
 	}
 
 	model := event.Model{
-		Id:          event.ID(id),
+		ID:          event.ID(id),
 		Title:       dto.Title,
 		Description: dto.Description,
 		BeginDate:   dto.BeginDate,
@@ -110,7 +111,7 @@ func (u *eventUseCase) Update(ctx context.Context, uid user.UID, id event.ID, dt
 			BeginDate: dto.BeginDate,
 			EndDate:   dto.EndDate,
 		},
-		Uid: uid,
+		UID: uid,
 	}, id)
 	if err != nil {
 		return nil, err
@@ -175,7 +176,7 @@ func (u *eventUseCase) intervalList(
 	endDate time.Time,
 ) ([]*ReturnEventDto, error) {
 	models, err := u.eventRepo.GetByInterval(ctx, event.UserInterval{
-		Uid: uid,
+		UID: uid,
 		Interval: event.Interval{
 			BeginDate: beginDate,
 			EndDate:   endDate,

@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
 )
@@ -20,13 +21,13 @@ func NewEventParticipantRepository() event.ParticipantRepository {
 
 func (r *EventParticipantRepository) Create(_ context.Context, participants []event.Participant) error {
 	for _, participant := range participants {
-		r.participantsByEventID[participant.EventId] = append(
-			r.participantsByEventID[participant.EventId],
+		r.participantsByEventID[participant.EventID] = append(
+			r.participantsByEventID[participant.EventID],
 			participants...,
 		)
 
-		r.participantsByUID[participant.Uid] = append(
-			r.participantsByUID[participant.Uid],
+		r.participantsByUID[participant.UID] = append(
+			r.participantsByUID[participant.UID],
 			participants...,
 		)
 	}
@@ -34,10 +35,10 @@ func (r *EventParticipantRepository) Create(_ context.Context, participants []ev
 	return nil
 }
 
-func (r *EventParticipantRepository) GetParticipants(_ context.Context, eventId event.ID) ([]user.UID, error) {
+func (r *EventParticipantRepository) GetParticipants(_ context.Context, eventID event.ID) ([]user.UID, error) {
 	result := make([]user.UID, 0)
-	for _, p := range r.participantsByEventID[eventId] {
-		result = append(result, p.Uid)
+	for _, p := range r.participantsByEventID[eventID] {
+		result = append(result, p.UID)
 	}
 
 	return result, nil
@@ -46,21 +47,21 @@ func (r *EventParticipantRepository) GetParticipants(_ context.Context, eventId 
 func (r *EventParticipantRepository) GetUserEventIds(_ context.Context, uid user.UID) ([]event.ID, error) {
 	result := make([]event.ID, 0)
 	for _, p := range r.participantsByUID[uid] {
-		result = append(result, p.EventId)
+		result = append(result, p.EventID)
 	}
 
 	return result, nil
 }
 
-func (r *EventParticipantRepository) DeleteAllForEvent(ctx context.Context, eventId event.ID) error {
-	participants := r.participantsByEventID[eventId]
-	delete(r.participantsByEventID, eventId)
+func (r *EventParticipantRepository) DeleteAllForEvent(ctx context.Context, eventID event.ID) error {
+	participants := r.participantsByEventID[eventID]
+	delete(r.participantsByEventID, eventID)
 
 	for _, p := range participants {
-		curSlice := r.participantsByUID[p.Uid]
+		curSlice := r.participantsByUID[p.UID]
 		for i, el := range curSlice {
-			if el.EventId == eventId {
-				r.participantsByUID[p.Uid] = append(curSlice[:i], curSlice[i+1:]...)
+			if el.EventID == eventID {
+				r.participantsByUID[p.UID] = append(curSlice[:i], curSlice[i+1:]...)
 				break
 			}
 		}

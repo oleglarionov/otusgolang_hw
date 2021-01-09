@@ -4,18 +4,17 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
-	internalgrpc "github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/grpc"
-	"google.golang.org/grpc"
-	"net/http"
-
 	golog "log"
+	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
+	internalgrpc "github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/grpc"
 	internalhttp "github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/http"
 	"github.com/spf13/viper"
+	"google.golang.org/grpc"
 )
 
 var configFile string
@@ -60,7 +59,7 @@ func main() {
 
 	// handle os signals
 	ctx, cancel := context.WithCancel(context.Background())
-	go signalHandler(app, ctx, cancel)
+	go signalHandler(ctx, app, cancel)
 
 	// start
 	app.logger.Info("calendar is running...")
@@ -89,7 +88,7 @@ func main() {
 	<-ctx.Done()
 }
 
-func signalHandler(app *CalendarApp, ctx context.Context, cancel context.CancelFunc) {
+func signalHandler(ctx context.Context, app *CalendarApp, cancel context.CancelFunc) {
 	defer cancel()
 
 	signals := make(chan os.Signal, 1)

@@ -2,12 +2,13 @@ package event
 
 import (
 	"context"
+
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
 )
 
 type Service interface {
 	EnsureIntervalAvailable(ctx context.Context, interval UserInterval, excluded ...ID) error
-	HasAccess(ctx context.Context, uid user.UID, eventId ID) bool
+	HasAccess(ctx context.Context, uid user.UID, eventID ID) bool
 	CreateEvent(ctx context.Context, model Model, uids []user.UID) error
 	DeleteEvent(ctx context.Context, model Model) error
 }
@@ -24,14 +25,14 @@ type service struct {
 	participantRepo ParticipantRepository
 }
 
-func (s *service) HasAccess(ctx context.Context, uid user.UID, eventId ID) bool {
-	uids, err := s.participantRepo.GetParticipants(ctx, eventId)
+func (s *service) HasAccess(ctx context.Context, uid user.UID, eventID ID) bool {
+	uids, err := s.participantRepo.GetParticipants(ctx, eventID)
 	if err != nil {
 		panic(err) // todo?
 	}
 
-	for _, curUid := range uids {
-		if uid == curUid {
+	for _, curUID := range uids {
+		if uid == curUID {
 			return true
 		}
 	}
@@ -61,8 +62,8 @@ func (s *service) CreateEvent(ctx context.Context, model Model, uids []user.UID)
 	participantModels := make([]Participant, 0, len(uids))
 	for _, uid := range uids {
 		participantModels = append(participantModels, Participant{
-			EventId: model.Id,
-			Uid:     uid,
+			EventID: model.ID,
+			UID:     uid,
 		})
 	}
 
@@ -75,7 +76,7 @@ func (s *service) CreateEvent(ctx context.Context, model Model, uids []user.UID)
 }
 
 func (s *service) DeleteEvent(ctx context.Context, model Model) error {
-	err := s.participantRepo.DeleteAllForEvent(ctx, model.Id)
+	err := s.participantRepo.DeleteAllForEvent(ctx, model.ID)
 	if err != nil {
 		return err
 	}

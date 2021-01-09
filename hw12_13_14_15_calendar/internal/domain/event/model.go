@@ -2,12 +2,13 @@ package event
 
 import (
 	"database/sql/driver"
-	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
 	"time"
+
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
 )
 
 type Model struct {
-	Id          ID        `db:"id"`
+	ID          ID        `db:"id"`
 	Title       string    `db:"title"`
 	Description string    `db:"description"`
 	BeginDate   time.Time `db:"begin_date"`
@@ -15,8 +16,8 @@ type Model struct {
 }
 
 type Participant struct {
-	EventId ID       `db:"event_id"`
-	Uid     user.UID `db:"uid"`
+	EventID ID       `db:"event_id"`
+	UID     user.UID `db:"uid"`
 }
 
 type ID string

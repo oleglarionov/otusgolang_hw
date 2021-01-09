@@ -2,6 +2,7 @@ package event
 
 import (
 	"context"
+
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
 )
 
@@ -15,7 +16,7 @@ type Repository interface {
 
 type ParticipantRepository interface {
 	Create(ctx context.Context, participants []Participant) error
-	DeleteAllForEvent(ctx context.Context, eventId ID) error
+	DeleteAllForEvent(ctx context.Context, eventID ID) error
 	GetUserEventIds(ctx context.Context, uid user.UID) ([]ID, error)
-	GetParticipants(ctx context.Context, eventId ID) ([]user.UID, error)
+	GetParticipants(ctx context.Context, eventID ID) ([]user.UID, error)
 }

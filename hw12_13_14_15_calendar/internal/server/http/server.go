@@ -2,9 +2,10 @@ package internalhttp
 
 import (
 	"context"
-	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 	"net"
 	"net/http"
+
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 )
 
 type Server struct {

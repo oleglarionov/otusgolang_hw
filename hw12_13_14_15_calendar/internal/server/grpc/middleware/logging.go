@@ -3,13 +3,14 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"net"
+	"time"
+
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
-	"net"
-	"time"
 )
 
 type LoggingMiddleware struct {

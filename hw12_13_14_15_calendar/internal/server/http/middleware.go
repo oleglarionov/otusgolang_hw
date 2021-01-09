@@ -2,10 +2,11 @@ package internalhttp
 
 import (
 	"fmt"
-	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 )
 
 type loggingResponseWriter struct {

@@ -13,11 +13,11 @@ func TestEventRepo(t *testing.T) {
 	ctx := context.Background()
 	initialEvents := []event.Model{
 		{
-			Id:    "1",
+			ID:    "1",
 			Title: "event-1",
 		},
 		{
-			Id:    "2",
+			ID:    "2",
 			Title: "event-2",
 		},
 	}
@@ -26,20 +26,20 @@ func TestEventRepo(t *testing.T) {
 		repo := makeRepo(initialEvents)
 
 		model := event.Model{
-			Id:    "3",
+			ID:    "3",
 			Title: "event-3",
 		}
 
 		err := repo.Create(ctx, model)
 
 		require.NoError(t, err)
-		require.Equal(t, model, repo.data[model.Id])
+		require.Equal(t, model, repo.data[model.ID])
 	})
 
 	t.Run("get by id", func(t *testing.T) {
 		repo := makeRepo(initialEvents)
 
-		e, err := repo.GetByID(ctx, initialEvents[0].Id)
+		e, err := repo.GetByID(ctx, initialEvents[0].ID)
 		require.NoError(t, err)
 
 		require.Equal(t, initialEvents[0], e)
@@ -48,15 +48,15 @@ func TestEventRepo(t *testing.T) {
 	t.Run("update", func(t *testing.T) {
 		repo := makeRepo(initialEvents)
 		updatedEvent := event.Model{
-			Id:    initialEvents[0].Id,
+			ID:    initialEvents[0].ID,
 			Title: "updated-title",
 		}
 
 		err := repo.Update(ctx, updatedEvent)
 		require.NoError(t, err)
 
-		require.Equal(t, updatedEvent, repo.data[updatedEvent.Id])
-		require.Equal(t, initialEvents[1], repo.data[initialEvents[1].Id])
+		require.Equal(t, updatedEvent, repo.data[updatedEvent.ID])
+		require.Equal(t, initialEvents[1], repo.data[initialEvents[1].ID])
 	})
 
 	t.Run("delete", func(t *testing.T) {
@@ -66,10 +66,10 @@ func TestEventRepo(t *testing.T) {
 		err := repo.Delete(ctx, eventToDelete)
 		require.NoError(t, err)
 
-		_, ok := repo.data[eventToDelete.Id]
+		_, ok := repo.data[eventToDelete.ID]
 		require.False(t, ok)
 
-		_, ok = repo.data[initialEvents[1].Id]
+		_, ok = repo.data[initialEvents[1].ID]
 		require.True(t, ok)
 	})
 
@@ -85,7 +85,7 @@ func TestEventRepo(t *testing.T) {
 
 				id := strconv.Itoa(idInt)
 				err := repo.Create(ctx, event.Model{
-					Id:    event.ID(id),
+					ID:    event.ID(id),
 					Title: "title-" + id,
 				})
 

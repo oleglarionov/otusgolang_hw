@@ -1,12 +1,13 @@
 package handler
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/usecase"
-	"net/http"
-	"time"
 )
 
 func (h *Handler) createEvent(c *gin.Context) {
