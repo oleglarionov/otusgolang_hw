@@ -13,10 +13,10 @@ import (
 
 type EventServiceServerImpl struct {
 	api.UnimplementedEventServiceServer
-	eventUseCase usecase.EventUseCaseInterface
+	eventUseCase usecase.EventUseCase
 }
 
-func NewEventServiceServerImpl(eventUseCase usecase.EventUseCaseInterface) *EventServiceServerImpl {
+func NewEventServiceServerImpl(eventUseCase usecase.EventUseCase) *EventServiceServerImpl {
 	return &EventServiceServerImpl{
 		eventUseCase: eventUseCase,
 	}

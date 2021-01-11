@@ -29,7 +29,7 @@ type ReturnEventDto struct {
 	event.Model
 }
 
-type EventUseCaseInterface interface {
+type EventUseCase interface {
 	Create(ctx context.Context, uid user.UID, dto CreateEventDto) (*ReturnEventDto, error)
 	Update(ctx context.Context, uid user.UID, id event.ID, dto UpdateEventDto) (*ReturnEventDto, error)
 	Delete(ctx context.Context, uid user.UID, id event.ID) error
@@ -38,13 +38,13 @@ type EventUseCaseInterface interface {
 	MonthList(ctx context.Context, uid user.UID, beginDate time.Time) ([]*ReturnEventDto, error)
 }
 
-func NewEventUseCase(
+func NewEventUseCaseImpl(
 	eventRepo event.Repository,
 	participantRepo event.ParticipantRepository,
 	service event.Service,
 	uuidGenerator common.UUIDGenerator,
-) EventUseCaseInterface {
-	return &eventUseCase{
+) *EventUseCaseImpl {
+	return &EventUseCaseImpl{
 		eventRepo:       eventRepo,
 		participantRepo: participantRepo,
 		service:         service,
@@ -52,16 +52,16 @@ func NewEventUseCase(
 	}
 }
 
-var _ EventUseCaseInterface = (*eventUseCase)(nil)
+var _ EventUseCase = (*EventUseCaseImpl)(nil)
 
-type eventUseCase struct {
+type EventUseCaseImpl struct {
 	eventRepo       event.Repository
 	participantRepo event.ParticipantRepository
 	service         event.Service
 	uuidGenerator   common.UUIDGenerator
 }
 
-func (u *eventUseCase) Create(ctx context.Context, uid user.UID, dto CreateEventDto) (*ReturnEventDto, error) {
+func (u *EventUseCaseImpl) Create(ctx context.Context, uid user.UID, dto CreateEventDto) (*ReturnEventDto, error) {
 	// todo: добавить проверку, что beginDate < endDate
 
 	err := u.service.EnsureIntervalAvailable(ctx, event.UserInterval{
@@ -96,7 +96,7 @@ func (u *eventUseCase) Create(ctx context.Context, uid user.UID, dto CreateEvent
 	return &ReturnEventDto{model}, nil
 }
 
-func (u *eventUseCase) Update(ctx context.Context, uid user.UID, id event.ID, dto UpdateEventDto) (*ReturnEventDto, error) {
+func (u *EventUseCaseImpl) Update(ctx context.Context, uid user.UID, id event.ID, dto UpdateEventDto) (*ReturnEventDto, error) {
 	if !u.service.HasAccess(ctx, uid, id) {
 		return nil, ErrNotFound
 	}
@@ -130,7 +130,7 @@ func (u *eventUseCase) Update(ctx context.Context, uid user.UID, id event.ID, dt
 	return &ReturnEventDto{model}, nil
 }
 
-func (u *eventUseCase) Delete(ctx context.Context, uid user.UID, id event.ID) error {
+func (u *EventUseCaseImpl) Delete(ctx context.Context, uid user.UID, id event.ID) error {
 	if !u.service.HasAccess(ctx, uid, id) {
 		return ErrNotFound
 	}
@@ -148,28 +148,28 @@ func (u *eventUseCase) Delete(ctx context.Context, uid user.UID, id event.ID) er
 	return nil
 }
 
-func (u *eventUseCase) DayList(ctx context.Context, uid user.UID, day time.Time) ([]*ReturnEventDto, error) {
+func (u *EventUseCaseImpl) DayList(ctx context.Context, uid user.UID, day time.Time) ([]*ReturnEventDto, error) {
 	beginDate := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, day.Location())
 	endDate := beginDate.Add(time.Hour * 24)
 
 	return u.intervalList(ctx, uid, beginDate, endDate)
 }
 
-func (u *eventUseCase) WeekList(ctx context.Context, uid user.UID, beginDate time.Time) ([]*ReturnEventDto, error) {
+func (u *EventUseCaseImpl) WeekList(ctx context.Context, uid user.UID, beginDate time.Time) ([]*ReturnEventDto, error) {
 	beginDate = time.Date(beginDate.Year(), beginDate.Month(), beginDate.Day(), 0, 0, 0, 0, beginDate.Location())
 	endDate := beginDate.AddDate(0, 0, 7)
 
 	return u.intervalList(ctx, uid, beginDate, endDate)
 }
 
-func (u *eventUseCase) MonthList(ctx context.Context, uid user.UID, beginDate time.Time) ([]*ReturnEventDto, error) {
+func (u *EventUseCaseImpl) MonthList(ctx context.Context, uid user.UID, beginDate time.Time) ([]*ReturnEventDto, error) {
 	beginDate = time.Date(beginDate.Year(), beginDate.Month(), beginDate.Day(), 0, 0, 0, 0, beginDate.Location())
 	endDate := beginDate.AddDate(0, 1, 0)
 
 	return u.intervalList(ctx, uid, beginDate, endDate)
 }
 
-func (u *eventUseCase) intervalList(
+func (u *EventUseCaseImpl) intervalList(
 	ctx context.Context,
 	uid user.UID,
 	beginDate,

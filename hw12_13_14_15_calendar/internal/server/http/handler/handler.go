@@ -7,12 +7,12 @@ import (
 )
 
 type Handler struct {
-	eventUseCase usecase.EventUseCaseInterface
+	eventUseCase usecase.EventUseCase
 	l            common.Logger
 }
 
 func NewHandler(
-	eventUseCase usecase.EventUseCaseInterface,
+	eventUseCase usecase.EventUseCase,
 	l common.Logger,
 ) *Handler {
 	return &Handler{

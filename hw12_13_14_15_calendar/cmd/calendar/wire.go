@@ -39,7 +39,8 @@ func setup(cfg Config) (*CalendarApp, error) {
 		middleware.NewLoggingMiddleware,
 		middleware.NewAuthenticationMiddleware,
 
-		usecase.NewEventUseCase,
+		wire.Bind(new(usecase.EventUseCase), new(*usecase.EventUseCaseImpl)),
+		usecase.NewEventUseCaseImpl,
 		eventRepositoryProvider,
 		eventParticipantRepositoryProvider,
 		dbProvider,

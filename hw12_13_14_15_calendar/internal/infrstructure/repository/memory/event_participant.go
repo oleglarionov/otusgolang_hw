@@ -23,12 +23,12 @@ func (r *EventParticipantRepository) Create(_ context.Context, participants []ev
 	for _, participant := range participants {
 		r.participantsByEventID[participant.EventID] = append(
 			r.participantsByEventID[participant.EventID],
-			participants...,
+			participant,
 		)
 
 		r.participantsByUID[participant.UID] = append(
 			r.participantsByUID[participant.UID],
-			participants...,
+			participant,
 		)
 	}
 
