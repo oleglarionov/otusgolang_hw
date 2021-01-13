@@ -17,6 +17,12 @@ migrate:
 	fi
 	./bin/goose -dir=migrations postgres "$(DSN)" up
 
+wire:
+	@if [ ! -f "./bin/wire" ]; then \
+        echo "installing wire..." && \
+        go build -o ./bin/wire github.com/google/wire/cmd/wire; \
+    fi
+
 build-img:
 	docker build \
 		--build-arg=LDFLAGS="$(LDFLAGS)" \
@@ -37,5 +43,8 @@ install-lint-deps:
 
 lint: install-lint-deps
 	golangci-lint run ./...
+
+generate:
+	go generate
 
 .PHONY: build run build-img run-img version test lint

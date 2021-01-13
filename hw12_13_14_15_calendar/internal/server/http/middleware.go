@@ -6,13 +6,29 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/logger"
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 )
 
-func loggingMiddleware(next http.Handler, l logger.Logger) http.Handler {
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func newLoggingResponseWriter(responseWriter http.ResponseWriter) *loggingResponseWriter {
+	return &loggingResponseWriter{ResponseWriter: responseWriter}
+}
+
+func (lrw *loggingResponseWriter) WriteHeader(code int) {
+	lrw.statusCode = code
+	lrw.ResponseWriter.WriteHeader(code)
+}
+
+func loggingMiddleware(next http.Handler, l common.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		lrw := newLoggingResponseWriter(w)
+
 		start := time.Now()
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(lrw, r)
 		elapsed := time.Since(start)
 
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
@@ -26,7 +42,7 @@ func loggingMiddleware(next http.Handler, l logger.Logger) http.Handler {
 			start.Format("02/Jan/2006:03:04:05 Z0700"),
 			r.Method,
 			r.RequestURI,
-			200,
+			lrw.statusCode,
 			elapsed,
 			r.UserAgent(),
 		))

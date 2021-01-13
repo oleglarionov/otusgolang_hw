@@ -2,9 +2,14 @@
 level = "INFO"
 file = "logs.txt"
 
-[server]
+[http_server]
 port = "8080"
 
+[grpc_server]
+port = "9090"
+
 [repository]
-type = "sql"
-credentials = "host=localhost port=54320 user=postgres password=qwerty dbname=postgres sslmode=disable"
+type = "memory"  # memory or sql
+
+[db]
+dsn = "host=localhost port=54320 user=postgres password=qwerty dbname=postgres sslmode=disable"

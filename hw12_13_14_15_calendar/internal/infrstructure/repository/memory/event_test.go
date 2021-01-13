@@ -2,7 +2,7 @@ package memory
 
 import (
 	"context"
-	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/model"
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
 	"github.com/stretchr/testify/require"
 	"strconv"
 	"sync"
@@ -11,7 +11,7 @@ import (
 
 func TestEventRepo(t *testing.T) {
 	ctx := context.Background()
-	initialEvents := []model.Event{
+	initialEvents := []event.Model{
 		{
 			ID:    "1",
 			Title: "event-1",
@@ -25,38 +25,29 @@ func TestEventRepo(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
 		repo := makeRepo(initialEvents)
 
-		event := model.Event{
+		model := event.Model{
 			ID:    "3",
 			Title: "event-3",
 		}
 
-		err := repo.Create(ctx, event)
+		err := repo.Create(ctx, model)
 
 		require.NoError(t, err)
-		require.Equal(t, event, repo.data[event.ID])
-	})
-
-	t.Run("get all", func(t *testing.T) {
-		repo := makeRepo(initialEvents)
-
-		events, err := repo.GetAll(ctx)
-		require.NoError(t, err)
-
-		require.Equal(t, initialEvents, events)
+		require.Equal(t, model, repo.data[model.ID])
 	})
 
 	t.Run("get by id", func(t *testing.T) {
 		repo := makeRepo(initialEvents)
 
-		event, err := repo.GetByID(ctx, initialEvents[0].ID)
+		e, err := repo.GetByID(ctx, initialEvents[0].ID)
 		require.NoError(t, err)
 
-		require.Equal(t, initialEvents[0], event)
+		require.Equal(t, initialEvents[0], e)
 	})
 
 	t.Run("update", func(t *testing.T) {
 		repo := makeRepo(initialEvents)
-		updatedEvent := model.Event{
+		updatedEvent := event.Model{
 			ID:    initialEvents[0].ID,
 			Title: "updated-title",
 		}
@@ -93,8 +84,8 @@ func TestEventRepo(t *testing.T) {
 				defer wg.Done()
 
 				id := strconv.Itoa(idInt)
-				err := repo.Create(ctx, model.Event{
-					ID:    model.EventID(id),
+				err := repo.Create(ctx, event.Model{
+					ID:    event.ID(id),
 					Title: "title-" + id,
 				})
 
@@ -110,12 +101,12 @@ func TestEventRepo(t *testing.T) {
 			go func(idInt int) {
 				defer wg.Done()
 
-				id := model.EventID(strconv.Itoa(idInt))
+				id := event.ID(strconv.Itoa(idInt))
 
-				event, err := repo.GetByID(ctx, id)
+				e, err := repo.GetByID(ctx, id)
 				require.NoError(t, err)
 
-				err = repo.Delete(ctx, event)
+				err = repo.Delete(ctx, e)
 				require.NoError(t, err)
 			}(i)
 		}
@@ -125,12 +116,13 @@ func TestEventRepo(t *testing.T) {
 	})
 }
 
-func makeRepo(data []model.Event) *EventRepo {
+func makeRepo(data []event.Model) *EventRepository {
 	ctx := context.Background()
 
-	repo := NewEventRepo()
-	for _, event := range data {
-		_ = repo.Create(ctx, event)
+	pRepo := NewEventParticipantRepository()
+	repo := NewEventRepository(pRepo)
+	for _, e := range data {
+		_ = repo.Create(ctx, e)
 	}
 
 	return repo
