@@ -36,7 +36,7 @@ func (r *EventParticipantRepository) Create(_ context.Context, participants []ev
 }
 
 func (r *EventParticipantRepository) GetParticipants(_ context.Context, eventID event.ID) ([]user.UID, error) {
-	var result []user.UID
+	result := make([]user.UID, 0, len(r.participantsByEventID[eventID]))
 	for _, p := range r.participantsByEventID[eventID] {
 		result = append(result, p.UID)
 	}

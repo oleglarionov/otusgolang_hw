@@ -2,9 +2,10 @@ package scheduler
 
 import (
 	"context"
+	"time"
+
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
 	"github.com/pkg/errors"
-	"time"
 )
 
 type Cleaner interface {

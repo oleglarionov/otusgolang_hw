@@ -3,11 +3,12 @@ package rabbit
 import (
 	"context"
 	"encoding/json"
+	"log"
+	"sync"
+
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/application/broker"
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
-	"log"
-	"sync"
 )
 
 type Config struct {
@@ -131,8 +132,7 @@ func (c *Client) Read(ctx context.Context) (<-chan []byte, error) {
 				if !ok {
 					return
 				}
-				l := len(msg.Body)
-				data := make([]byte, l, l)
+				data := make([]byte, len(msg.Body))
 				copy(data, msg.Body)
 				out <- data
 			}

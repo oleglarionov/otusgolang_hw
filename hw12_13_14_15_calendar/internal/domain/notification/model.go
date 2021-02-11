@@ -1,12 +1,13 @@
 package notification
 
 import (
-	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
 	"time"
+
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
 )
 
 type Model struct {
-	Uid   user.UID
+	UID   user.UID
 	Event Event
 }
 

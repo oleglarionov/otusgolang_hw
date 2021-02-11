@@ -3,12 +3,12 @@ package sql
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
+	"github.com/pkg/errors"
 )
 
 type EventParticipantRepository struct {

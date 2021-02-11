@@ -2,11 +2,12 @@ package scheduler
 
 import (
 	"context"
+	"time"
+
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/application/broker"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/notification"
 	"github.com/pkg/errors"
-	"time"
 )
 
 type Notifier interface {
@@ -57,7 +58,7 @@ func (n *NotifierImpl) Notify(ctx context.Context) error {
 
 		for _, p := range participants {
 			ntfc := notification.Model{
-				Uid:   p,
+				UID:   p,
 				Event: ntfcE,
 			}
 

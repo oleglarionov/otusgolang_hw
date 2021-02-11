@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/application/broker"
-	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
-	"github.com/spf13/viper"
 	golog "log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/application/broker"
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
+	"github.com/spf13/viper"
 )
 
 var configFile string

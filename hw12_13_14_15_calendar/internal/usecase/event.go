@@ -2,12 +2,12 @@ package usecase
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"time"
 
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
+	"github.com/pkg/errors"
 )
 
 type EventDto struct {
