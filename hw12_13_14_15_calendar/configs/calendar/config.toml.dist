@@ -12,4 +12,4 @@ port = "9090"
 type = "memory"  # memory or sql
 
 [db]
-dsn = "host=localhost port=54320 user=postgres password=qwerty dbname=postgres sslmode=disable"
+dsn = "user=postgres sslmode=disable port=54331 TimeZone=Europe/Moscow"

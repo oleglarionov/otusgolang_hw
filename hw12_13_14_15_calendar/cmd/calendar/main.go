@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
@@ -92,7 +93,7 @@ func signalHandler(ctx context.Context, app *CalendarApp, cancel context.CancelF
 	defer cancel()
 
 	signals := make(chan os.Signal, 1)
-	signal.Notify(signals)
+	signal.Notify(signals, syscall.SIGINT)
 
 	select {
 	case <-signals:

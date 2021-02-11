@@ -12,7 +12,7 @@ type EventParticipantRepository struct {
 	participantsByUID     map[user.UID][]event.Participant
 }
 
-func NewEventParticipantRepository() event.ParticipantRepository {
+func NewEventParticipantRepository() *EventParticipantRepository {
 	return &EventParticipantRepository{
 		participantsByEventID: make(map[event.ID][]event.Participant),
 		participantsByUID:     make(map[user.UID][]event.Participant),
@@ -36,7 +36,7 @@ func (r *EventParticipantRepository) Create(_ context.Context, participants []ev
 }
 
 func (r *EventParticipantRepository) GetParticipants(_ context.Context, eventID event.ID) ([]user.UID, error) {
-	result := make([]user.UID, 0)
+	var result []user.UID
 	for _, p := range r.participantsByEventID[eventID] {
 		result = append(result, p.UID)
 	}

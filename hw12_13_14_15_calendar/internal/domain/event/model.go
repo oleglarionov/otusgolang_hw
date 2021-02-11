@@ -8,11 +8,12 @@ import (
 )
 
 type Model struct {
-	ID          ID        `db:"id"`
-	Title       string    `db:"title"`
-	Description string    `db:"description"`
-	BeginDate   time.Time `db:"begin_date"`
-	EndDate     time.Time `db:"end_date"`
+	ID                     ID        `db:"id"`
+	Title                  string    `db:"title"`
+	Description            string    `db:"description"`
+	BeginDate              time.Time `db:"begin_date"`
+	EndDate                time.Time `db:"end_date"`
+	IsProcessedByScheduler bool      `db:"is_processed_by_scheduler"`
 }
 
 type Participant struct {

@@ -4,7 +4,8 @@ create table event_participants
 (
     event_id uuid    not null
         constraint event_participants_events_id_fk
-            references events,
+            references events
+            on delete cascade,
     uid      varchar not null,
     constraint event_participants_pk
         primary key (event_id, uid)

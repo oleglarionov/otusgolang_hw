@@ -42,7 +42,10 @@ func setup(cfg Config) (*CalendarApp, error) {
 		wire.Bind(new(usecase.EventUseCase), new(*usecase.EventUseCaseImpl)),
 		usecase.NewEventUseCaseImpl,
 		eventRepositoryProvider,
-		eventParticipantRepositoryProvider,
+
+		memory.NewEventParticipantRepository,
+		sql.NewEventParticipantRepository,
+
 		dbProvider,
 		sql.NewStatementBuilder,
 		event.NewService,
@@ -84,7 +87,7 @@ func grpcMiddlewaresProvider(
 
 func eventRepositoryProvider(
 	cfg Config,
-	participantRepository event.ParticipantRepository,
+	participantRepository *memory.EventParticipantRepository,
 	db *sqlx.DB,
 	sbt sq.StatementBuilderType,
 ) (event.Repository, error) {
@@ -96,18 +99,6 @@ func eventRepositoryProvider(
 		return sql.NewEventRepository(db, sbt), nil
 	default:
 		return nil, fmt.Errorf("unsupported participantRepository type: %s", repoType)
-	}
-}
-
-func eventParticipantRepositoryProvider(cfg Config, db *sqlx.DB, sbt sq.StatementBuilderType) (event.ParticipantRepository, error) {
-	repoType := cfg.Repository.Type
-	switch repoType {
-	case "memory":
-		return memory.NewEventParticipantRepository(), nil
-	case "sql":
-		return sql.NewEventParticipantRepository(db, sbt), nil
-	default:
-		return nil, fmt.Errorf("unsupported repository type: %s", repoType)
 	}
 }
 

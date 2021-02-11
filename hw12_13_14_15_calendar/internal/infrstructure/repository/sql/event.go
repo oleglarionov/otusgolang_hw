@@ -3,6 +3,8 @@ package sql
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -48,7 +50,8 @@ func (r *EventRepository) Update(ctx context.Context, model event.Model) error {
 		"set title = :title, "+
 		"description = :description, "+
 		"begin_date = :begin_date, "+
-		"end_date = :end_date "+
+		"end_date = :end_date, "+
+		"is_processed_by_scheduler = :is_processed_by_scheduler "+
 		"where id = :id",
 		&model,
 	)
@@ -108,6 +111,47 @@ func (r *EventRepository) GetByInterval(ctx context.Context, interval event.User
 		model := event.Model{}
 		if err := rows.StructScan(&model); err != nil {
 			return nil, fmt.Errorf("error scanning event: %w", err)
+		}
+
+		models = append(models, model)
+	}
+
+	return models, nil
+}
+
+func (r *EventRepository) DeleteWhereEndDateBefore(ctx context.Context, maxEndDate time.Time) error {
+	_, err := r.db.ExecContext(ctx, "delete from events where end_date < $1", maxEndDate)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
+func (r *EventRepository) GetUnprocessedEvents(ctx context.Context, beginDateInterval event.Interval) ([]event.Model, error) {
+	rows, err := r.db.QueryxContext(ctx,
+		"select * "+
+			"from events "+
+			"where is_processed_by_scheduler=false "+
+			"and begin_date >= $1 "+
+			"and begin_date < $2",
+		beginDateInterval.BeginDate,
+		beginDateInterval.EndDate,
+	)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	defer rows.Close()
+
+	var models []event.Model
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		model := event.Model{}
+		if err := rows.StructScan(&model); err != nil {
+			return nil, errors.WithStack(err)
 		}
 
 		models = append(models, model)

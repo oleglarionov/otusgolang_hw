@@ -2,13 +2,14 @@ package event
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
 )
 
 type Service interface {
 	EnsureIntervalAvailable(ctx context.Context, interval UserInterval, excluded ...ID) error
-	HasAccess(ctx context.Context, uid user.UID, eventID ID) bool
+	HasAccess(ctx context.Context, uid user.UID, eventID ID) (bool, error)
 	CreateEvent(ctx context.Context, model Model, uids []user.UID) error
 	DeleteEvent(ctx context.Context, model Model) error
 }
@@ -25,19 +26,19 @@ type service struct {
 	participantRepo ParticipantRepository
 }
 
-func (s *service) HasAccess(ctx context.Context, uid user.UID, eventID ID) bool {
+func (s *service) HasAccess(ctx context.Context, uid user.UID, eventID ID) (bool, error) {
 	uids, err := s.participantRepo.GetParticipants(ctx, eventID)
 	if err != nil {
-		panic(err) // todo?
+		return false, errors.WithStack(err)
 	}
 
 	for _, curUID := range uids {
 		if uid == curUID {
-			return true
+			return true, nil
 		}
 	}
 
-	return false
+	return false, nil
 }
 
 func (s *service) EnsureIntervalAvailable(ctx context.Context, interval UserInterval, excluded ...ID) error {

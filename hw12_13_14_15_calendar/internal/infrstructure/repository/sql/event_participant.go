@@ -3,6 +3,7 @@ package sql
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -35,10 +36,6 @@ func (r *EventParticipantRepository) Create(ctx context.Context, participants []
 	return err
 }
 
-func (r *EventParticipantRepository) GetUserEventIds(ctx context.Context, uid user.UID) ([]event.ID, error) {
-	panic("implement me")
-}
-
 func (r *EventParticipantRepository) GetParticipants(ctx context.Context, eventID event.ID) ([]user.UID, error) {
 	query, args := r.sbt.Select("uid").
 		From("event_participants").
@@ -47,15 +44,20 @@ func (r *EventParticipantRepository) GetParticipants(ctx context.Context, eventI
 
 	rows, err := r.db.QueryxContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	defer rows.Close()
 
-	result := make([]user.UID, 0)
+	var result []user.UID
 	for rows.Next() {
+		err := rows.Err()
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
 		var uid user.UID
 		if err := rows.Scan(&uid); err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
 		result = append(result, uid)
 	}
