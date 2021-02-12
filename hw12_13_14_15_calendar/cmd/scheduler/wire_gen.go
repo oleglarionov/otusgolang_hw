@@ -7,6 +7,8 @@ package main
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/application/scheduler"
@@ -16,7 +18,6 @@ import (
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/rabbit"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/repository/memory"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/repository/sql"
-	"time"
 )
 
 // Injectors from wire.go:
@@ -40,11 +41,12 @@ func setup(cfg Config) (*SchedulerApp, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	client := rabbitClientProvider(cfg)
+	client, cleanup := rabbitClientProvider(cfg)
 	participantRepository := sql.NewEventParticipantRepository(db, statementBuilderType)
 	notifierImpl := scheduler.NewNotifierImpl(client, repository, participantRepository)
 	schedulerApp := NewApp(logger, cleanerImpl, notifierImpl)
 	return schedulerApp, func() {
+		cleanup()
 	}, nil
 }
 
@@ -88,6 +90,10 @@ func cleanerProvider(cfg Config, repository event.Repository) (*scheduler.Cleane
 	return scheduler.NewCleanerImpl(lifespan, repository), nil
 }
 
-func rabbitClientProvider(cfg Config) *rabbit.Client {
-	return rabbit.NewClient(rabbit.Config(cfg.Rabbit))
+func rabbitClientProvider(cfg Config) (*rabbit.Client, func()) {
+	client := rabbit.NewClient(rabbit.Config(cfg.Rabbit))
+	cleanup := func() {
+		client.Close()
+	}
+	return client, cleanup
 }

@@ -2,13 +2,15 @@ package usecase
 
 import (
 	"context"
+	"log"
+	"testing"
+	"time"
+
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/repository/memory"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/uuid"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 var uid = user.UID("user-1")
@@ -392,5 +394,10 @@ func buildEventUseCase(data initData) *EventUseCaseImpl {
 	}
 	_ = participantRepository.Create(ctx, data.participants)
 
-	return NewEventUseCaseImpl(eventRepository, participantRepository, eventService, uuidGenerator)
+	location, err := time.LoadLocation("Europe/Moscow")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return NewEventUseCaseImpl(eventRepository, participantRepository, eventService, uuidGenerator, location)
 }

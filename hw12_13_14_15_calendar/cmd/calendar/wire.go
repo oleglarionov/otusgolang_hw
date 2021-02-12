@@ -4,6 +4,9 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"time"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/wire"
 	"github.com/jmoiron/sqlx"
@@ -20,7 +23,6 @@ import (
 	internalhttp "github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/http"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/http/handler"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/usecase"
-	"net/http"
 )
 
 func setup(cfg Config) (*CalendarApp, error) {
@@ -41,6 +43,7 @@ func setup(cfg Config) (*CalendarApp, error) {
 
 		wire.Bind(new(usecase.EventUseCase), new(*usecase.EventUseCaseImpl)),
 		usecase.NewEventUseCaseImpl,
+		locationProvider,
 		eventRepositoryProvider,
 
 		memory.NewEventParticipantRepository,
@@ -108,4 +111,8 @@ func dbProvider(cfg Config) (*sqlx.DB, error) {
 	}
 
 	return sql.NewDB(cfg.DB.DSN)
+}
+
+func locationProvider() (*time.Location, error) {
+	return time.LoadLocation("Europe/Moscow")
 }

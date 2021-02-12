@@ -4,6 +4,8 @@ package main
 
 import (
 	"fmt"
+	"time"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/wire"
 	"github.com/jmoiron/sqlx"
@@ -15,7 +17,6 @@ import (
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/rabbit"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/repository/memory"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/infrstructure/repository/sql"
-	"time"
 )
 
 func setup(cfg Config) (*SchedulerApp, func(), error) {
