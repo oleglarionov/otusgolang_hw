@@ -1,1 +1,120 @@
-version: "3"
+version: "3.8"
+
+services:
+  db:
+    build:
+      context: ../build/db
+      dockerfile: Dockerfile
+    ports:
+      - 54331:5432
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - hw-db-data:/var/lib/postgresql/data
+  queue:
+    image: library/rabbitmq:3.8-management
+    ports:
+      - 15673:15672
+      - 5673:5672
+  calendar:
+    build:
+      context: ../
+      dockerfile: build/calendar/Dockerfile
+    env_file:
+      - ../build/calendar/local.env
+    ports:
+      - 8888:8888
+      - 9999:9999
+    depends_on:
+      - db
+    volumes:
+      - type: bind
+        source: ../build/wait-for-it.sh
+        target: /opt/wait-for-it.sh
+        read_only: true
+    entrypoint: [ "/opt/wait-for-it.sh", "db:5432", "--" ]
+    command: [ "/opt/calendar/calendar-app", "-migrate", "/opt/calendar/migrations" ]
+  scheduler:
+    build:
+      context: ../
+      dockerfile: build/scheduler/Dockerfile
+    env_file:
+      - ../build/scheduler/local.env
+    depends_on:
+      - db
+      - queue
+    volumes:
+      - type: bind
+        source: ../build/wait-for-it.sh
+        target: /opt/wait-for-it.sh
+        read_only: true
+    entrypoint: [ "/opt/wait-for-it.sh", "db:5432", "--", "/opt/wait-for-it.sh", "queue:5672", "--" ]
+    command: [ "/opt/calendar/scheduler-app" ]
+  sender:
+    build:
+      context: ../
+      dockerfile: build/sender/Dockerfile
+    env_file:
+      - ../build/sender/local.env
+    depends_on:
+      - queue
+    volumes:
+      - type: bind
+        source: ../build/wait-for-it.sh
+        target: /opt/wait-for-it.sh
+        read_only: true
+    entrypoint: [ "/opt/wait-for-it.sh", "queue:5672", "--" ]
+    command: [ "/opt/calendar/sender-app" ]
+  calendar-test:
+    build:
+      context: ../
+      dockerfile: build/calendar/Dockerfile
+    ports:
+      - 10008:8888
+      - 10009:9999
+    env_file:
+      - ../build/calendar/test.env
+    depends_on:
+      - db
+    volumes:
+      - type: bind
+        source: ../build/wait-for-it.sh
+        target: /opt/wait-for-it.sh
+        read_only: true
+    entrypoint: [ "/opt/wait-for-it.sh", "db:5432", "--" ]
+    command: [ "/opt/calendar/calendar-app", "-migrate", "/opt/calendar/migrations" ]
+  scheduler-test:
+    build:
+      context: ../
+      dockerfile: build/scheduler/Dockerfile
+    env_file:
+      - ../build/scheduler/test.env
+    depends_on:
+      - db
+      - queue
+    volumes:
+      - type: bind
+        source: ../build/wait-for-it.sh
+        target: /opt/wait-for-it.sh
+        read_only: true
+    entrypoint: [ "/opt/wait-for-it.sh", "db:5432", "--", "/opt/wait-for-it.sh", "queue:5672", "--" ]
+    command: [ "/opt/calendar/scheduler-app" ]
+  sender-test:
+    build:
+      context: ../
+      dockerfile: build/sender/Dockerfile
+    env_file:
+      - ../build/sender/test.env
+    depends_on:
+      - queue
+    volumes:
+      - type: bind
+        source: ../build/wait-for-it.sh
+        target: /opt/wait-for-it.sh
+        read_only: true
+      - ../logs:/opt/calendar/logs
+    entrypoint: [ "/opt/wait-for-it.sh", "queue:5672", "--" ]
+    command: [ "/opt/calendar/sender-app" ]
+
+volumes:
+  hw-db-data:

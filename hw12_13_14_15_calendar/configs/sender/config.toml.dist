@@ -1,7 +1,0 @@
-[logger]
-level = "INFO"
-file = "sender-logs.txt"
-
-[rabbit]
-dsn = "amqp://guest:guest@localhost:5673/"
-queue = "calendar"

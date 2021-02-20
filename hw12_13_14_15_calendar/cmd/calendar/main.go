@@ -11,27 +11,39 @@ import (
 	"syscall"
 	"time"
 
+	// timezone.
+	_ "time/tzdata"
+
+	"github.com/jmoiron/sqlx"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 	internalgrpc "github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/grpc"
 	internalhttp "github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/http"
+	"github.com/pressly/goose"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 )
 
-var configFile string
+var migrationsDir string
 
 func init() {
-	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
+	flag.StringVar(&migrationsDir, "migrate", "", "run migrations from directory")
+	viper.AutomaticEnv()
 }
 
 type CalendarApp struct {
 	logger     common.Logger
 	httpServer *internalhttp.Server
 	grpcServer *internalgrpc.Server
+	db         *sqlx.DB
 }
 
-func NewApp(logger common.Logger, httpServer *internalhttp.Server, grpcServer *internalgrpc.Server) *CalendarApp {
-	return &CalendarApp{logger: logger, httpServer: httpServer, grpcServer: grpcServer}
+func NewApp(
+	logger common.Logger,
+	httpServer *internalhttp.Server,
+	grpcServer *internalgrpc.Server,
+	db *sqlx.DB,
+) *CalendarApp {
+	return &CalendarApp{logger: logger, httpServer: httpServer, grpcServer: grpcServer, db: db}
 }
 
 func main() {
@@ -42,20 +54,19 @@ func main() {
 		return
 	}
 
-	// parsing config
-	viper.SetConfigFile(configFile)
-	if err := viper.ReadInConfig(); err != nil {
-		golog.Fatal(err)
-	}
-	var cfg Config
-	if err := viper.Unmarshal(&cfg); err != nil {
-		golog.Fatal(err)
-	}
+	cfg := getConfig()
 
 	// setup app
 	app, err := setup(cfg)
 	if err != nil {
 		golog.Fatal(err)
+	}
+
+	if migrationsDir != "" {
+		err := goose.Up(app.db.DB, migrationsDir)
+		if err != nil {
+			golog.Fatal(err)
+		}
 	}
 
 	// handle os signals
@@ -109,5 +120,26 @@ func signalHandler(ctx context.Context, app *CalendarApp, cancel context.CancelF
 		app.grpcServer.Stop()
 
 	case <-ctx.Done():
+	}
+}
+
+func getConfig() Config {
+	return Config{
+		Logger: LoggerConf{
+			Level: viper.Get("LOG_LEVEL").(string),
+			File:  viper.Get("LOG_FILE").(string),
+		},
+		HTTPServer: HTTPServerConf{
+			Port: viper.Get("HTTP_PORT").(string),
+		},
+		GrpcServer: GrpcServerConf{
+			Port: viper.Get("GRPC_PORT").(string),
+		},
+		Repository: RepositoryConf{
+			Type: viper.Get("REPO_TYPE").(string),
+		},
+		DB: DBConf{
+			DSN: viper.Get("DB_DSN").(string),
+		},
 	}
 }
