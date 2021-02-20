@@ -32,19 +32,17 @@ func setup(cfg Config) (*CalendarApp, error) {
 	if err != nil {
 		return nil, err
 	}
+	eventParticipantRepository := memory.NewEventParticipantRepository()
 	db, err := dbProvider(cfg)
 	if err != nil {
 		return nil, err
 	}
 	statementBuilderType := sql.NewStatementBuilder()
-	participantRepository, err := eventParticipantRepositoryProvider(cfg, db, statementBuilderType)
+	repository, err := eventRepositoryProvider(cfg, eventParticipantRepository, db, statementBuilderType)
 	if err != nil {
 		return nil, err
 	}
-	repository, err := eventRepositoryProvider(cfg, participantRepository, db, statementBuilderType)
-	if err != nil {
-		return nil, err
-	}
+	participantRepository := sql.NewEventParticipantRepository(db, statementBuilderType)
 	service := event.NewService(repository, participantRepository)
 	uuidGenerator := uuid.NewGenerator()
 	eventUseCaseImpl := usecase.NewEventUseCaseImpl(repository, participantRepository, service, uuidGenerator)
@@ -93,7 +91,7 @@ func grpcMiddlewaresProvider(
 
 func eventRepositoryProvider(
 	cfg Config,
-	participantRepository event.ParticipantRepository,
+	participantRepository *memory.EventParticipantRepository,
 	db *sqlx.DB,
 	sbt squirrel.StatementBuilderType,
 ) (event.Repository, error) {
@@ -105,18 +103,6 @@ func eventRepositoryProvider(
 		return sql.NewEventRepository(db, sbt), nil
 	default:
 		return nil, fmt.Errorf("unsupported participantRepository type: %s", repoType)
-	}
-}
-
-func eventParticipantRepositoryProvider(cfg Config, db *sqlx.DB, sbt squirrel.StatementBuilderType) (event.ParticipantRepository, error) {
-	repoType := cfg.Repository.Type
-	switch repoType {
-	case "memory":
-		return memory.NewEventParticipantRepository(), nil
-	case "sql":
-		return sql.NewEventParticipantRepository(db, sbt), nil
-	default:
-		return nil, fmt.Errorf("unsupported repository type: %s", repoType)
 	}
 }
 

@@ -3,6 +3,7 @@ package memory
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
@@ -12,12 +13,12 @@ import (
 type EventRepository struct {
 	mu                    sync.RWMutex
 	data                  map[event.ID]event.Model
-	participantRepository event.ParticipantRepository
+	participantRepository *EventParticipantRepository
 }
 
 var _ event.Repository = (*EventRepository)(nil)
 
-func NewEventRepository(participantRepository event.ParticipantRepository) *EventRepository {
+func NewEventRepository(participantRepository *EventParticipantRepository) *EventRepository {
 	return &EventRepository{
 		data:                  make(map[event.ID]event.Model),
 		participantRepository: participantRepository,
@@ -123,4 +124,32 @@ func (r *EventRepository) GetByInterval(ctx context.Context, interval event.User
 	}
 
 	return result, err
+}
+
+func (r *EventRepository) DeleteWhereEndDateBefore(_ context.Context, maxEndDate time.Time) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for id, e := range r.data {
+		if e.EndDate.Before(maxEndDate) {
+			delete(r.data, id)
+		}
+	}
+
+	return nil
+}
+
+func (r *EventRepository) GetUnprocessedEvents(_ context.Context, interval event.Interval) ([]event.Model, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	var result []event.Model
+	for _, e := range r.data {
+		if !e.IsProcessedByScheduler &&
+			(e.BeginDate.After(interval.BeginDate) || e.BeginDate.Equal(interval.BeginDate)) &&
+			e.BeginDate.Before(interval.EndDate) {
+			result = append(result, e)
+		}
+	}
+
+	return result, nil
 }

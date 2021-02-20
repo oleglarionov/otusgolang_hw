@@ -7,6 +7,7 @@ import (
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/common"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/user"
+	"github.com/pkg/errors"
 )
 
 type EventDto struct {
@@ -62,8 +63,6 @@ type EventUseCaseImpl struct {
 }
 
 func (u *EventUseCaseImpl) Create(ctx context.Context, uid user.UID, dto CreateEventDto) (*ReturnEventDto, error) {
-	// todo: добавить проверку, что beginDate < endDate
-
 	err := u.service.EnsureIntervalAvailable(ctx, event.UserInterval{
 		Interval: event.Interval{
 			BeginDate: dto.BeginDate,
@@ -88,7 +87,7 @@ func (u *EventUseCaseImpl) Create(ctx context.Context, uid user.UID, dto CreateE
 		EndDate:     dto.EndDate,
 	}
 
-	err = u.service.CreateEvent(ctx, model, []user.UID{uid}) // todo: обернуть в транзакцию
+	err = u.service.CreateEvent(ctx, model, []user.UID{uid})
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +96,11 @@ func (u *EventUseCaseImpl) Create(ctx context.Context, uid user.UID, dto CreateE
 }
 
 func (u *EventUseCaseImpl) Update(ctx context.Context, uid user.UID, id event.ID, dto UpdateEventDto) (*ReturnEventDto, error) {
-	if !u.service.HasAccess(ctx, uid, id) {
+	hasAccess, err := u.service.HasAccess(ctx, uid, id)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if !hasAccess {
 		return nil, ErrNotFound
 	}
 
@@ -131,7 +134,11 @@ func (u *EventUseCaseImpl) Update(ctx context.Context, uid user.UID, id event.ID
 }
 
 func (u *EventUseCaseImpl) Delete(ctx context.Context, uid user.UID, id event.ID) error {
-	if !u.service.HasAccess(ctx, uid, id) {
+	hasAccess, err := u.service.HasAccess(ctx, uid, id)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if !hasAccess {
 		return ErrNotFound
 	}
 
@@ -140,7 +147,7 @@ func (u *EventUseCaseImpl) Delete(ctx context.Context, uid user.UID, id event.ID
 		return err
 	}
 
-	err = u.service.DeleteEvent(ctx, model) // todo: обернуть в транзакцию
+	err = u.service.DeleteEvent(ctx, model)
 	if err != nil {
 		return err
 	}

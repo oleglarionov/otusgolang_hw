@@ -17,43 +17,43 @@ service EventService {
 }
 
 message CreateEventRequest {
-  string Id = 1;
-  string Title = 2;
-  string Description = 3;
-  google.protobuf.Timestamp BeginDate = 4;
-  google.protobuf.Timestamp EndDate = 5;
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  google.protobuf.Timestamp begin_date = 4;
+  google.protobuf.Timestamp end_date = 5;
 }
 
 message UpdateEventRequest {
-  string Id = 1;
-  string Title = 2;
-  string Description = 3;
-  google.protobuf.Timestamp BeginDate = 4;
-  google.protobuf.Timestamp EndDate = 5;
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  google.protobuf.Timestamp begin_date = 4;
+  google.protobuf.Timestamp end_date = 5;
 }
 
 message DeleteEventRequest {
-  string Id = 1;
+  string id = 1;
 }
 
 message DayListRequest {
-  google.protobuf.Timestamp Day = 1;
+  google.protobuf.Timestamp day = 1;
 }
 
 message WeekListRequest {
-  google.protobuf.Timestamp BeginDate = 1;
+  google.protobuf.Timestamp begin_date = 1;
 }
 
 message MonthListRequest {
-  google.protobuf.Timestamp BeginDate = 1;
+  google.protobuf.Timestamp begin_date = 1;
 }
 
 message Event {
-  string Id = 1;
-  string Title = 2;
-  string Description = 3;
-  google.protobuf.Timestamp BeginDate = 4;
-  google.protobuf.Timestamp EndDate = 5;
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  google.protobuf.Timestamp begin_date = 4;
+  google.protobuf.Timestamp end_date = 5;
 }
 
 message Events {

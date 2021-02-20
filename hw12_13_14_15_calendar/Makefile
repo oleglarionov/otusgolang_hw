@@ -1,11 +1,13 @@
-BIN := "./bin/calendar"
+BIN_DIR := "./bin"
 DOCKER_IMG="calendar:develop"
 
 GIT_HASH := $(shell git log --format="%h" -n 1)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 
 build:
-	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
+	go build -v -o "$(BIN_DIR)/calendar" -ldflags "$(LDFLAGS)" ./cmd/calendar
+	go build -v -o "$(BIN_DIR)/scheduler" -ldflags "$(LDFLAGS)" ./cmd/scheduler
+	go build -v -o "$(BIN_DIR)/sender" -ldflags "$(LDFLAGS)" ./cmd/sender
 
 run: build
 	$(BIN) -config ./configs/config.toml
@@ -16,12 +18,6 @@ migrate:
 		go build -o ./bin/goose github.com/pressly/goose/cmd/goose; \
 	fi
 	./bin/goose -dir=migrations postgres "$(DSN)" up
-
-wire:
-	@if [ ! -f "./bin/wire" ]; then \
-        echo "installing wire..." && \
-        go build -o ./bin/wire github.com/google/wire/cmd/wire; \
-    fi
 
 build-img:
 	docker build \
@@ -45,6 +41,6 @@ lint: install-lint-deps
 	golangci-lint run ./...
 
 generate:
-	go generate
+	go generate ./...
 
 .PHONY: build run build-img run-img version test lint
