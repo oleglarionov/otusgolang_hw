@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	golog "log"
 	"os"
 	"os/signal"
@@ -13,10 +12,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-var configFile string
-
 func init() {
-	flag.StringVar(&configFile, "config", "/etc/sender/config.toml", "Path to configuration file")
+	viper.AutomaticEnv()
 }
 
 type SenderApp struct {
@@ -32,17 +29,7 @@ func NewApp(logger common.Logger, reader broker.Reader) *SenderApp {
 }
 
 func main() {
-	flag.Parse()
-
-	// parsing config
-	viper.SetConfigFile(configFile)
-	if err := viper.ReadInConfig(); err != nil {
-		golog.Fatal(err)
-	}
-	var cfg Config
-	if err := viper.Unmarshal(&cfg); err != nil {
-		golog.Fatal(err)
-	}
+	cfg := getConfig()
 
 	// setup app
 	app, cleanup, err := setup(cfg)
@@ -58,17 +45,18 @@ func main() {
 	go func() {
 		app.Logger.Info("sender started")
 		defer app.Logger.Info("sender stopped")
+		defer cancel()
 
 		notificationCh, err := app.Reader.Read(ctx)
 		if err != nil {
 			app.Logger.Error(err.Error())
-			cancel()
 			return
 		}
 
 		for notification := range notificationCh {
 			str := string(notification)
 			golog.Println(str)
+			app.Logger.Info(str)
 		}
 	}()
 
@@ -85,5 +73,18 @@ func signalHandler(ctx context.Context, cancel context.CancelFunc) {
 	select {
 	case <-signals:
 	case <-ctx.Done():
+	}
+}
+
+func getConfig() Config {
+	return Config{
+		Logger: LoggerConf{
+			Level: viper.GetString("LOG_LEVEL"),
+			File:  viper.GetString("LOG_FILE"),
+		},
+		Rabbit: RabbitConf{
+			DSN:   viper.GetString("RABBIT_DSN"),
+			Queue: viper.GetString("RABBIT_QUEUE"),
+		},
 	}
 }

@@ -44,12 +44,14 @@ func NewEventUseCaseImpl(
 	participantRepo event.ParticipantRepository,
 	service event.Service,
 	uuidGenerator common.UUIDGenerator,
+	location *time.Location,
 ) *EventUseCaseImpl {
 	return &EventUseCaseImpl{
 		eventRepo:       eventRepo,
 		participantRepo: participantRepo,
 		service:         service,
 		uuidGenerator:   uuidGenerator,
+		location:        location,
 	}
 }
 
@@ -60,6 +62,7 @@ type EventUseCaseImpl struct {
 	participantRepo event.ParticipantRepository
 	service         event.Service
 	uuidGenerator   common.UUIDGenerator
+	location        *time.Location
 }
 
 func (u *EventUseCaseImpl) Create(ctx context.Context, uid user.UID, dto CreateEventDto) (*ReturnEventDto, error) {
@@ -156,21 +159,24 @@ func (u *EventUseCaseImpl) Delete(ctx context.Context, uid user.UID, id event.ID
 }
 
 func (u *EventUseCaseImpl) DayList(ctx context.Context, uid user.UID, day time.Time) ([]*ReturnEventDto, error) {
-	beginDate := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, day.Location())
+	day = day.In(u.location)
+	beginDate := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, u.location)
 	endDate := beginDate.Add(time.Hour * 24)
 
 	return u.intervalList(ctx, uid, beginDate, endDate)
 }
 
 func (u *EventUseCaseImpl) WeekList(ctx context.Context, uid user.UID, beginDate time.Time) ([]*ReturnEventDto, error) {
-	beginDate = time.Date(beginDate.Year(), beginDate.Month(), beginDate.Day(), 0, 0, 0, 0, beginDate.Location())
+	beginDate = beginDate.In(u.location)
+	beginDate = time.Date(beginDate.Year(), beginDate.Month(), beginDate.Day(), 0, 0, 0, 0, u.location)
 	endDate := beginDate.AddDate(0, 0, 7)
 
 	return u.intervalList(ctx, uid, beginDate, endDate)
 }
 
 func (u *EventUseCaseImpl) MonthList(ctx context.Context, uid user.UID, beginDate time.Time) ([]*ReturnEventDto, error) {
-	beginDate = time.Date(beginDate.Year(), beginDate.Month(), beginDate.Day(), 0, 0, 0, 0, beginDate.Location())
+	beginDate = beginDate.In(u.location)
+	beginDate = time.Date(beginDate.Year(), beginDate.Month(), beginDate.Day(), 0, 0, 0, 0, u.location)
 	endDate := beginDate.AddDate(0, 1, 0)
 
 	return u.intervalList(ctx, uid, beginDate, endDate)

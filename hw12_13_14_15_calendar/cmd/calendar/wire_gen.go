@@ -7,6 +7,9 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/api"
@@ -22,7 +25,6 @@ import (
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/http"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/server/http/handler"
 	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/usecase"
-	"net/http"
 )
 
 // Injectors from wire.go:
@@ -45,7 +47,11 @@ func setup(cfg Config) (*CalendarApp, error) {
 	participantRepository := sql.NewEventParticipantRepository(db, statementBuilderType)
 	service := event.NewService(repository, participantRepository)
 	uuidGenerator := uuid.NewGenerator()
-	eventUseCaseImpl := usecase.NewEventUseCaseImpl(repository, participantRepository, service, uuidGenerator)
+	location, err := locationProvider()
+	if err != nil {
+		return nil, err
+	}
+	eventUseCaseImpl := usecase.NewEventUseCaseImpl(repository, participantRepository, service, uuidGenerator, location)
 	handlerHandler := handler.NewHandler(eventUseCaseImpl, logger)
 	httpHandler := httpHandlerProvider(handlerHandler)
 	server := httpServerProvider(cfg, httpHandler, logger)
@@ -57,7 +63,7 @@ func setup(cfg Config) (*CalendarApp, error) {
 	if err != nil {
 		return nil, err
 	}
-	calendarApp := NewApp(logger, server, internalgrpcServer)
+	calendarApp := NewApp(logger, server, internalgrpcServer, db)
 	return calendarApp, nil
 }
 
@@ -112,4 +118,8 @@ func dbProvider(cfg Config) (*sqlx.DB, error) {
 	}
 
 	return sql.NewDB(cfg.DB.DSN)
+}
+
+func locationProvider() (*time.Location, error) {
+	return time.LoadLocation("Europe/Moscow")
 }

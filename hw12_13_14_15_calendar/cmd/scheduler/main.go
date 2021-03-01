@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	golog "log"
 	"os"
 	"os/signal"
@@ -14,10 +13,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-var configFile string
-
 func init() {
-	flag.StringVar(&configFile, "config", "/etc/scheduler/config.toml", "Path to configuration file")
+	viper.AutomaticEnv()
 }
 
 type SchedulerApp struct {
@@ -31,17 +28,7 @@ func NewApp(logger common.Logger, cleaner scheduler.Cleaner, notifier scheduler.
 }
 
 func main() {
-	flag.Parse()
-
-	// parsing config
-	viper.SetConfigFile(configFile)
-	if err := viper.ReadInConfig(); err != nil {
-		golog.Fatal(err)
-	}
-	var cfg Config
-	if err := viper.Unmarshal(&cfg); err != nil {
-		golog.Fatal(err)
-	}
+	cfg := getConfig()
 
 	// setup app
 	app, cleanup, err := setup(cfg)
@@ -90,5 +77,27 @@ func signalHandler(ctx context.Context, cancel context.CancelFunc) {
 	select {
 	case <-signals:
 	case <-ctx.Done():
+	}
+}
+
+func getConfig() Config {
+	return Config{
+		Logger: LoggerConf{
+			Level: viper.Get("LOG_LEVEL").(string),
+			File:  viper.Get("LOG_FILE").(string),
+		},
+		DB: DBConf{
+			DSN: viper.Get("DB_DSN").(string),
+		},
+		Repository: RepositoryConf{
+			Type: viper.Get("REPO_TYPE").(string),
+		},
+		Cleaner: CleanerConf{
+			EventLifespan: viper.Get("EVENT_LIFESPAN").(string),
+		},
+		Rabbit: RabbitConf{
+			DSN:   viper.Get("RABBIT_DSN").(string),
+			Queue: viper.Get("RABBIT_QUEUE").(string),
+		},
 	}
 }

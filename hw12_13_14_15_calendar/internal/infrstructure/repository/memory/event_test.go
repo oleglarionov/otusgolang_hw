@@ -2,11 +2,12 @@ package memory
 
 import (
 	"context"
-	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
-	"github.com/stretchr/testify/require"
 	"strconv"
 	"sync"
 	"testing"
+
+	"github.com/oleglarionov/otusgolang_hw/hw12_13_14_15_calendar/internal/domain/event"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEventRepo(t *testing.T) {
